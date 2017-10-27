@@ -19,6 +19,8 @@ int x=0,y=0;
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
+  //kprintf("physbase!!! %d \n", (uint64_t)physbase);
+  //kprintf("physfree %p \n", (uint64_t)physfree);
   struct smap_t {
     uint64_t base, length;
     uint32_t type;
@@ -26,11 +28,15 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   while(modulep[0] != 0x9001) modulep += modulep[1]+2;
   for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1 /* memory */ && smap->length != 0) {
+     kprintf("smap->length %x\n", smap->length);
+     kprintf("smap->base %x\n", smap->base);
+     kprintf("physfree %x\n", physfree);
      kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
     }
   }
-  kprintf("physfree %p\n", (uint64_t)physfree);
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+  kprintf("physbase %p\n", (uint64_t)physbase);
+  kprintf("physfree %p\n", (uint64_t)physfree);
   //checkAll();
 
 /*int a=4779;
@@ -71,7 +77,7 @@ irq_install();
 //isrs_install();
 //timer_phase();
 
-checkAll();
+//checkAll();
 //kprintf("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 
 
