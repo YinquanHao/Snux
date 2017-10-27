@@ -16,13 +16,6 @@ void* get_physaddr(void * virtualaddr){
 	printf("page_dir_index %lu\n", page_dir_index);
 	unsigned long page_tb_index =  *(unsigned long*)virtualaddr >> 12 & 0x1FF;
 	printf("page_tb_index %lu\n", page_tb_index);
-
-		/*
-	unsigned long page_dir_pt_index
-	unsigned long page_dir_index;
-	unsigned long page_tb_index;
-	unsigned long page_offset;
-	*/
 }
 
 
