@@ -37,7 +37,7 @@ void * init_pdpt(void * phyaddr, pml4_t PML4, unsigned long pml4_index);
 void * init_pdt(void * phyaddr, pdpt_t PDPT, unsigned long page_dir_pt_index);
 void * init_pt(void * phyaddr,pdt_t  PDT, unsigned long page_dir_index);
 void * init_mm(void* phyaddr, pml4_t PML4, pdpt_t PDPT, pdt_t PDT, pt_t PT);
-
+unsigned long  get_kmalloc_base(unsigned long physfree, unsigned long smap_base);
 
 
 
@@ -153,7 +153,14 @@ void* get_physaddr(void * virtualaddr){
 }
 
 
+unsigned long  get_kmalloc_base(unsigned long physfree, unsigned long smap_base) {
+	physfree = (physfree>>12)+((physfree-smap_base)>>12);
+	return physfree<<12;
+}
+
+
 int main(){
+	/*
 	pdpt_t PDPT;
 	pdt_t PDT;
 	pt_t PT;
@@ -181,9 +188,10 @@ int main(){
 	printf("the address of mallock %lu \n", (unsigned long)add);
 	void*  add1 = kmalloc(PAGE_SIZE,phyaddr_ptr);
 	printf("the address of mallock %lu \n", (unsigned long)add1);
+	*/
+	printf("print %lx",get_kmalloc_base(0X20B000,0x100000));
 
-
-	init_mm(phyaddr_ptr,PML4,PDPT,PDT,PT);
+	//init_mm(phyaddr_ptr,PML4,PDPT,PDT,PT);
 
 
 }
