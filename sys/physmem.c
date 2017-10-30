@@ -1,6 +1,10 @@
 #include <sys/physmem.h>
 
 
+extern page_t* physical_page_start;
+extern page_t* free_pg_head;
+
+
 //get the start of physical mem that can be used my kmalloc
 unsigned long  get_kmalloc_base(unsigned long physfree, unsigned long smap_base) {
 	//phyfree>>12 -> get num of pages total below physfreee
@@ -43,6 +47,53 @@ unsigned int get_free_pg(page_t* head){
 		return 0;
 	}
 }
+
+void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_max_number){
+	page_t *page_tmp;
+	unsigned int  i=0;
+	for(i=0;i<page_max_number;i++){
+		page_tmp=physical_page_start+i;
+		page_tmp->pg_index=index;
+		//used pages
+		if(i<=number-1){
+			page_tmp->next=NULL;
+			page_tmp->occup=PG_OCCU;
+			page_tmp->ref_ct=-1;
+		}
+		//unused pages
+		else{
+			if(i!=page_max_number-1){
+				page_tmp->ref_ct=-1;
+				page_tmp->occup=PG_FREE;
+				page_tmp->next=page_tmp+1;
+			}
+			//last unused page
+			else{
+				page_tmp->ref_ct=-1;
+				page_tmp->occup=PG_FREE;
+				page_tmp->next=NULL;
+			}
+		}
+		index++;
+	}
+	free_pg_head=physical_page_start+number;		
+}
+
+int free_page(unsigned long index){
+	page_t *page_tmp;
+	page_t *first_free;
+	page_tmp=physical_page_start+index;
+	first_free=free_pg_head;
+	free_pg_head=page_tmp;
+	page_tmp->occup=PG_FREE;
+	page_tmp->next=first_free;
+	return 1;
+}
+
+
+
+
+
 
 
 

@@ -11,3 +11,5 @@ typedef struct page page_t;
 
 unsigned long allocate_page(unsigned int physfree_pg_start);
 unsigned int get_free_pg(page_t* head);
+void init_phy(unsigned long  number,unsigned long  index,unsigned long  page_max_number);
+int free_page(unsigned long index);
