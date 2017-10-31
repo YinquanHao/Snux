@@ -9,13 +9,18 @@
 #include <sys/timer.h>
 #include <sys/irq.h>
 #include <sys/pci.h>
+#include <sys/physmem.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
+//@todo: declare these structs will divide the availbe memory into 3 parts 
+page_t* physical_page_start;
+page_t* free_pg_head;
 
-int x=0,y=0; 
+int x=0,y=0;
+unsigned long memory_length=0; 
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
@@ -32,11 +37,35 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
      kprintf("smap->base %x\n", smap->base);
      kprintf("physfree %x\n", physfree);
      kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+     if(smap->length>memory_length){
+	memory_length=smap->length;	
+	}
     }
   }
+
+kprintf("%d",memory_length>>12);
+unsigned long page_index=smap->base>>12;
+memory_length=memory_length>>12;
+physical_page_start= (page_t*)(0xffffffff80000000UL + physfree);
+unsigned long page_total_number=memory_length;
+unsigned long used_page=(unsigned long)physfree>>12;
+//@todo:used page +257?
+used_page=used_page+256;
+init_phy(used_page,page_index,page_total_number);
+int pageNum=get_free_pg(free_pg_head);
+kprintf("pageNum:%d",pageNum);
+kprintf("used page:%d\n",used_page);
+kprintf("total:%d\n",page_total_number);
+kprintf("start:%p,%d",physical_page_start,sizeof(physical_page_start));
+
+
+
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
   kprintf("physbase %p\n", (uint64_t)physbase);
   kprintf("physfree %p\n", (uint64_t)physfree);
+
+
+
   //checkAll();
 
 /*int a=4779;

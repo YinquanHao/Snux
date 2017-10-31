@@ -1,18 +1,18 @@
 #include <sys/physmem.h>
+#include <sys/kprintf.h>
 
-
+ 
 extern page_t* physical_page_start;
 extern page_t* free_pg_head;
-
+//page_t* physical_page_start;
+//page_t* free_pg_head;
 
 //get the start of physical mem that can be used my kmalloc
-unsigned long  get_kmalloc_base(unsigned long physfree, unsigned long smap_base) {
+/*unsigned long  get_kmalloc_base(unsigned long physfree, unsigned long smap_base) {
 	//phyfree>>12 -> get num of pages total below physfreee
 	physfree = (physfree>>12)+((physfree-smap_base)>>12);
 	return physfree<<12;
-}
-
-
+}*/
 
 /*
 get the first free page and allocate it.
@@ -23,8 +23,8 @@ get the first free page and allocate it.
 	the physical address where the first free page
 */
 unsigned long allocate_page(unsigned int physfree_pg_start){
-	unsigned int pg_index = get_free_pg();
-	page_t* pg = physfree_pg_start  + pg_index;
+	unsigned int pg_index = get_free_pg(free_pg_head);
+	page_t* pg = physfree_pg_start/*physical_page_start*/  + pg_index;
 	pg->occup = PG_OCCU;
 	return (unsigned long)(pg->pg_index << 12);
 }
@@ -39,15 +39,16 @@ get first free_list
 */
 unsigned int get_free_pg(page_t* head){
 	if(head){
-		unsigned int index = head->index;
+		unsigned int index = head->pg_index;
 		head = head->next;
 		return index;
 	}else{
-		printf("No free page finded");
+		kprintf("No free page finded");
 		return 0;
 	}
 }
 
+//get wrong index, struct 
 void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_max_number){
 	page_t *page_tmp;
 	unsigned int  i=0;
@@ -76,7 +77,11 @@ void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_m
 		}
 		index++;
 	}
-	free_pg_head=physical_page_start+number;		
+	page_tmp=physical_page_start+1;
+	kprintf("index:%x",page_tmp->pg_index);
+	free_pg_head=(page_t*)(physical_page_start+number);
+	kprintf("%d",number);
+	kprintf("headindex:%x,addr:%x",free_pg_head->pg_index,free_pg_head);		
 }
 
 int free_page(unsigned long index){
@@ -89,6 +94,11 @@ int free_page(unsigned long index){
 	page_tmp->next=first_free;
 	return 1;
 }
+
+
+
+
+
 
 
 

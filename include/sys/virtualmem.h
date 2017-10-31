@@ -31,3 +31,5 @@ typedef struct pt* pt_t;
 
 void init_kernalmem(unsigned long physfree);
 void *memset(void *s, int ch , unsigned int n);
+
+#endif
