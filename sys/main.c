@@ -20,7 +20,8 @@ page_t* physical_page_start;
 page_t* free_pg_head;
 
 int x=0,y=0;
-unsigned long memory_length=0; 
+unsigned long memory_length=0;
+unsigned long smap_base_max = 0;
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
@@ -33,18 +34,19 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   while(modulep[0] != 0x9001) modulep += modulep[1]+2;
   for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1 /* memory */ && smap->length != 0) {
-     kprintf("smap->length %x\n", smap->length);
-     kprintf("smap->base %x\n", smap->base);
-     kprintf("physfree %x\n", physfree);
-     kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
-     if(smap->length>memory_length){
-	memory_length=smap->length;	
-	}
+      kprintf("smap->length %x\n", smap->length);
+      kprintf("smap->base %x\n", smap->base);
+      kprintf("physfree %x\n", physfree);
+      kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+      if(smap->length>memory_length){
+        memory_length=smap->length;	
+        smap_base_max = smap->base;
+      }
     }
   }
 
 kprintf("%d",memory_length>>12);
-unsigned long page_index=smap->base>>12;
+unsigned long page_index=smap_base_max>>12;
 memory_length=memory_length>>12;
 physical_page_start= (page_t*)(0xffffffff80000000UL + physfree);
 unsigned long page_total_number=memory_length;

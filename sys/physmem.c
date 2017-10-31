@@ -52,6 +52,7 @@ unsigned int get_free_pg(page_t* head){
 void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_max_number){
 	page_t *page_tmp;
 	unsigned int  i=0;
+	kprintf("index:  %x\n",index);
 	for(i=0;i<page_max_number;i++){
 		page_tmp=physical_page_start+i;
 		page_tmp->pg_index=index;
@@ -78,7 +79,8 @@ void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_m
 		index++;
 	}
 	page_tmp=physical_page_start+1;
-	kprintf("index:%x",page_tmp->pg_index);
+	kprintf("index: %x \n",page_tmp->pg_index);
+	kprintf("occupied :%x \n",page_tmp->occup);
 	free_pg_head=(page_t*)(physical_page_start+number);
 	kprintf("%d",number);
 	kprintf("headindex:%x,addr:%x",free_pg_head->pg_index,free_pg_head);		
