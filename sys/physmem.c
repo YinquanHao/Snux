@@ -16,9 +16,6 @@ extern page_t* free_pg_head;
 
 /*
 get the first free page and allocate it.
-@param:
-	physfree_pg_start:
-		The index of first physfree page we can use in the memory
 @return:
 	the physical address where the first free page
 */
@@ -26,9 +23,9 @@ unsigned long allocate_page(){
 	unsigned int pg_index = get_free_pg(free_pg_head);
 	kprintf("pg_index in allocate_page %d \n",pg_index);
 	kprintf("pg_index in allocate_page %d \n",pg_index);
-	page_t* pg = physical_page_start + pg_index;
+	page_t* pg = (page_t*)(physical_page_start ) + pg_index - 256;
+	kprintf("pg_index new 1 : %d \n", pg->pg_index);
 	pg->occup = PG_OCCU;
-
 	return (unsigned long)(pg->pg_index << 12);
 }
 
@@ -86,7 +83,7 @@ void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_m
 	kprintf("occupied :%x \n",page_tmp->occup);
 	free_pg_head=(page_t*)(physical_page_start+number);
 	kprintf("%d",number);
-	kprintf("headindex:%x,addr:%x",free_pg_head->pg_index,free_pg_head);
+	kprintf("headindex:%x,addr:%x \n",free_pg_head->pg_index,free_pg_head);
 
 	allocate_page(free_pg_head->pg_index);
 	kprintf(" new head index11: %x \n",free_pg_head->pg_index);
