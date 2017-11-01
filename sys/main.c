@@ -10,6 +10,7 @@
 #include <sys/irq.h>
 #include <sys/pci.h>
 #include <sys/physmem.h>
+#include <sys/virtualmem.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -55,17 +56,17 @@ unsigned long used_page=(unsigned long)physfree>>12;
 used_page=used_page+256;
 init_phy(used_page,page_index,page_total_number);
 int pageNum=get_free_pg(free_pg_head);
-kprintf("pageNum:%d",pageNum);
-kprintf("used page:%d\n",used_page);
-kprintf("total:%d\n",page_total_number);
-kprintf("start:%p,%d",physical_page_start,sizeof(physical_page_start));
+//kprintf("pageNum:%d",pageNum);
+//kprintf("used page:%d\n",used_page);
+//kprintf("total:%d\n",page_total_number);
+//kprintf("start:%p,%d",physical_page_start,sizeof(physical_page_start));
 
 
 
-  kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-  kprintf("physbase %p\n", (uint64_t)physbase);
-  kprintf("physfree %p\n", (uint64_t)physfree);
-
+kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+kprintf("physbase %p\n", (uint64_t)physbase);
+kprintf("physfree %p\n", (uint64_t)physfree);
+init_kernalmem(physfree);
 
 
   //checkAll();

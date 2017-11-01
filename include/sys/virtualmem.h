@@ -6,6 +6,7 @@
 #define KERNAL_PG_TB_NUM 128 //the maximum number of pages for kernal	
 #define PG_OCCU 1
 #define TABLE_SIZE 512
+#define KERNAL_TB 0
 
 struct pml4t {
     unsigned long  PML4E[TABLE_SIZE];
@@ -30,6 +31,7 @@ typedef struct pt* pt_t;
 
 
 void init_kernalmem(unsigned long physfree);
-void *memset(void *s, int ch , unsigned int n);
+void *memset(void *s, int ch , unsigned long n);
+void* kmalloc(int flag, unsigned int size);
 
 #endif

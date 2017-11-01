@@ -41,10 +41,10 @@ unsigned int get_free_pg(){
 	if(free_pg_head){
 		unsigned int index = free_pg_head->pg_index;
 		free_pg_head = free_pg_head->next;
-		kprintf("head index new in get_free_pg %d", free_pg_head->pg_index);
+		//kprintf("head index new in get_free_pg %d", free_pg_head->pg_index);
 		return index;
 	}else{
-		kprintf("No free page finded");
+		//kprintf("No free page finded");
 		return 0;
 	}
 }
@@ -79,15 +79,15 @@ void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_m
 		index++;
 	}
 	page_tmp=physical_page_start+1;
-	kprintf("index: %x \n",page_tmp->pg_index);
-	kprintf("occupied :%x \n",page_tmp->occup);
+	//kprintf("index: %x \n",page_tmp->pg_index);
+	//kprintf("occupied :%x \n",page_tmp->occup);
 	free_pg_head=(page_t*)(physical_page_start+number);
-	kprintf("%d",number);
-	kprintf("headindex:%x,addr:%x \n",free_pg_head->pg_index,free_pg_head);
+	//kprintf("%d",number);
+	//kprintf("headindex:%x,addr:%x \n",free_pg_head->pg_index,free_pg_head);
 
-	allocate_page(free_pg_head->pg_index);
-	kprintf(" new head index11: %x \n",free_pg_head->pg_index);
-	kprintf("new head occupied11 :%x \n",free_pg_head->occup);
+	//allocate_page(free_pg_head->pg_index);
+	//kprintf(" new head index11: %x \n",free_pg_head->pg_index);
+	//kprintf("new head occupied11 :%x \n",free_pg_head->occup);
 
 
 
