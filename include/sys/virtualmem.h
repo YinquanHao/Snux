@@ -7,6 +7,7 @@
 #define PG_OCCU 1
 #define TABLE_SIZE 512
 #define KERNAL_TB 0
+#define PG_DESC_SIZE 256
 
 struct pml4t {
     unsigned long  PML4E[TABLE_SIZE];

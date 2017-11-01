@@ -1,3 +1,4 @@
+#include <sys/virtualmem.h>
 #include <sys/physmem.h>
 #include <sys/kprintf.h>
 
@@ -21,12 +22,13 @@ get the first free page and allocate it.
 */
 unsigned long allocate_page(){
 	unsigned int pg_index = get_free_pg(free_pg_head);
-	kprintf("pg_index in allocate_page %d \n",pg_index);
-	kprintf("pg_index in allocate_page %d \n",pg_index);
+	//kprintf("pg_index in allocate_page %d \n",pg_index);
+	//kprintf("pg_index in allocate_page %d \n",pg_index);
 	page_t* pg = (page_t*)(physical_page_start ) + pg_index - 256;
-	kprintf("pg_index new 1 : %d \n", pg->pg_index);
+	//kprintf("pg_index new 1 : %d \n", pg->pg_index);
 	pg->occup = PG_OCCU;
-	return (unsigned long)(pg->pg_index << 12);
+	kprintf("address returned %x \n",PG_DESC_SIZE*PAGE_SIZE+(physical_page_start-0xffffffff80000000UL));
+	return (unsigned long)(pg_index - 1036 + PG_DESC_SIZE )*PAGE_SIZE+(physical_page_start-0xffffffff80000000UL);
 }
 
 

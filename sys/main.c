@@ -48,7 +48,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
 kprintf("%d",memory_length>>12);
 unsigned long page_index=smap_base_max>>12;
-memory_length=memory_length>>12;
+memory_length=(memory_length>>12)-256;
 physical_page_start= (page_t*)(0xffffffff80000000UL + physfree);
 unsigned long page_total_number=memory_length;
 unsigned long used_page=(unsigned long)physfree>>12;
