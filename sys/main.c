@@ -48,14 +48,19 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
 kprintf("%d",memory_length>>12);
 unsigned long page_index=smap_base_max>>12;
-memory_length=(memory_length>>12)-256;
+memory_length=(memory_length>>12)-PG_DESC_SIZE;
 physical_page_start= (page_t*)(0xffffffff80000000UL + physfree);
 unsigned long page_total_number=memory_length;
 unsigned long used_page=(unsigned long)physfree>>12;
 //@todo:used page +257?
 used_page=used_page+256;
 init_phy(used_page,page_index,page_total_number);
+kprintf("page_total_number %d",page_total_number);
 int pageNum=get_free_pg(free_pg_head);
+
+
+//init_phy_page(8192, page_num, page_index);
+
 //kprintf("pageNum:%d",pageNum);
 //kprintf("used page:%d\n",used_page);
 //kprintf("total:%d\n",page_total_number);
@@ -67,6 +72,8 @@ kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 kprintf("physbase %p\n", (uint64_t)physbase);
 kprintf("physfree %p\n", (uint64_t)physfree);
 init_kernalmem(physfree);
+
+init_virt_phy_mapping();
 
 
   //checkAll();

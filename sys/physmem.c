@@ -27,7 +27,7 @@ unsigned long allocate_page(){
 	page_t* pg = (page_t*)(physical_page_start ) + pg_index - 256;
 	//kprintf("pg_index new 1 : %d \n", pg->pg_index);
 	pg->occup = PG_OCCU;
-	kprintf("address returned %x \n",PG_DESC_SIZE*PAGE_SIZE+(physical_page_start-0xffffffff80000000UL));
+	//kprintf("address returned %x \n",PG_DESC_SIZE*PAGE_SIZE+(physical_page_start-0xffffffff80000000UL));
 	return (unsigned long)(pg_index - 1036 + PG_DESC_SIZE )*PAGE_SIZE+(physical_page_start-0xffffffff80000000UL);
 }
 
