@@ -16,31 +16,36 @@ void init_kernalmem(unsigned long physfree){
 	memset((void *) kernal_base, 0,PAGE_SIZE*128);
 	PML4 = (pml4_t)kmalloc(KERNAL_TB,PAGE_SIZE);
     //PML41 = (pml4_t)kmalloc(KERNAL_TB,PAGE_SIZE);
-    kprintf("address of PML4 %x \n", PML4);
+    //kprintf("address of PML4 %x \n", PML4);
     //kprintf("address of PML41 %x", PML41);
 }
 
 
 void init_virt_phy_mapping() {
-    map_kernel(0x2000000);//test for 32M mapping 
-    //set_CR3((unsigned long) PML4-VIRT_ST);
+    map_kernel(0x20C000);//test for 32M mapping 
+    set_CR3((unsigned long) PML4);
+
+    //__asm volatile("mov %0, %%cr3":: "b"(base_pgdir_addr));
+    //kprintf("testing %x \n",PML4->PML4E[0]);
+    ///kprintf("testing %x \n",((pdpt_t)PML4->PML4E[0])->PDPTE[2]);
+    //("testing %x \n",PML4->PML4E[2]);
 }
 
 
 void map_kernel(unsigned long map_size){
-    unsigned long vir_st  = VIRT_ST;
-    unsigned long phy_st = 0;
-    //while(phy_st<map_size){
-    int k=0;
-    while(k<1000){
+    unsigned long vir_st  = VIRT_ST+0x200000;
+    unsigned long phy_st = 0x200000;
+   // unsigned long phy_st = 0x20C000;
+    //int k=0;
+    while(phy_st<0x20C000){
         vir_phy_mapping(vir_st,phy_st);
-        vir_st += PAGE_SIZE;
-        phy_st += PAGE_SIZE;
-        k++;
+        vir_st += PAGE_SIZE; //*20000;
+        phy_st += PAGE_SIZE; //*20000;
+        //k+=PAGE_SIZE;
     }
-    ///}
 }
 
+/*returned a physical address*/
 void* kmalloc(int flag, unsigned int size){
     unsigned long res_addr = 0x0;
     switch(flag){
@@ -50,37 +55,34 @@ void* kmalloc(int flag, unsigned int size){
         default:
             res_addr = 0x0;
     }
-    kprintf("kmalloc address returned %x \n", res_addr);
+    //kprintf("kmalloc address returned %x \n", res_addr);
     memset(res_addr,0,4096);
     return (void*)res_addr;
 }
+
 
 void vir_phy_mapping(unsigned long vir_addr, unsigned long phy_addr){
     pdpt_t pdpt_tab;
     pdt_t pdt_tab;
     pt_t pt_tab;
     unsigned long entry_address;
-    unsigned long pml4_index = *(unsigned long*)vir_addr >> 39 & 0x1FF;
+    //(((vir_addr) >> 39) & 0x1FF);
+    unsigned long pml4_index = (((vir_addr) >> 39) & 0x1FF);
     //printf("pml4_index %lu\n", pml4_index);
-    unsigned long page_dir_pt_index  =  *(unsigned long*)vir_addr >> 30 & 0x1FF;
+    unsigned long page_dir_pt_index  = (((vir_addr) >> 30) & 0x1FF);
     //printf("page_dir_pt_index %lu\n", page_dir_pt_index);
-    unsigned long page_dir_index  = *(unsigned long*)vir_addr >> 21 & 0x1FF;
+    unsigned long page_dir_index  = (((vir_addr) >> 21) & 0x1FF);
     //printf("page_dir_index %lu\n", page_dir_index);
-    unsigned long page_tb_index =  *(unsigned long*)vir_addr >> 12 & 0x1FF;
+    unsigned long page_tb_index =  (((vir_addr) >> 12) & 0x1FF);
     //printf("page_tb_index %lu\n", page_tb_index);
     unsigned long pml4_entry=PML4->PML4E[pml4_index];
-
-    kprintf("pml4_index %d\n",pml4_index);
-    kprintf("pml4_entry %x\n",pml4_entry);
     
     if(pml4_entry & PT_P ){                        //if the given entry presented in the table, use it
         entry_address=pml4_entry&PERM_MASK;    //mask the permission bits of the address  
         pdpt_tab=(pdpt_t)(entry_address);
     }else{
-        //kprintf("enfie \n");                                          //set up new pdpt for entry
         pdpt_tab=(pdpt_t)set_pdpt(PML4,pml4_index,KERNAL_MALLOC);
     }
-
     unsigned long pdpt_entry=pdpt_tab->PDPTE[page_dir_pt_index];
     if(pdpt_entry & PT_P ){ 
         entry_address=(pdpt_entry)&PERM_MASK;      
@@ -94,11 +96,18 @@ void vir_phy_mapping(unsigned long vir_addr, unsigned long phy_addr){
         pt_tab=(pt_t)(entry_address);
     }else{
         pt_tab=(pt_t)set_pt(pdt_tab,page_dir_index,KERNAL_MALLOC);
-        //kprintf("enter else1 \n");
     }
     unsigned long page_entry=phy_addr;
     page_entry=page_entry|PT_P|PT_U|PT_W; //set the page table flags
     pt_tab->PTE[page_tb_index]=page_entry;
+
+    //kprintf("pml4_index: %x  ",vir_addr);
+    kprintf("pml4_index: %d  ",pml4_index);
+    //kprintf("pdpt_tab->PDPTE[page_dir_pt_index] %x\n",pdpt_tab->PDPTE[page_dir_pt_index]);
+    //kprintf("pdt_tab->PDTE[page_dir_index] %x\n",pdt_tab->PDTE[page_dir_index]);
+   // kprintf("pdt_tab->PDTE[page_dir_index] %d\n",pt_tab->PTE[page_tb_index]);
+   // kprintf("phystart %x \n",VIRT_ST);
+
 }
 
 
@@ -152,6 +161,30 @@ void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
     return (void *) pt;
 }
 
+
+/*
+void set_CR3(unsigned long CR3) {
+    __asm volatile("mov %0, %%cr3":: "r"(CR3));
+}
+
+*/
+
+void set_CR3(pml4_t new_cr3){
+ unsigned long base_pgdir_addr = (unsigned long)new_cr3;
+ __asm volatile("mov %0, %%cr3":: "b"(base_pgdir_addr));
+
+}
+/*
+void test_pg_tb(unsigned char* address){
+    int n = 4096;
+    int i=0;
+    unsigned char* byte_array = address;
+    while(i<n){
+        kprintf("%X ",(unsigned)byte_array[i]);
+        i++;
+    }
+}
+*/
 
 void *memset(void *s, int ch , unsigned long n) {
     char* tmp = s;
