@@ -5,16 +5,17 @@
 pml4_t PML4;
 pml4_t PML41;
 
+//physfree =  0x20c000
 void init_kernalmem(unsigned long physfree){
 	//kernal_base is the virtual address where actual kernal ends. The address is the start point we can used for kmalloc
-	unsigned long kernal_base = (physfree + PG_DESC_SIZE*PAGE_SIZE) + VIRT_ST;
-    /*
-    kprintf("print physfree !!!! %x \n",physfree);
-    kprintf("print kernal_base !!!! %x \n",kernal_base);
-    kprintf("print total length %x \n",total);
-    */
-	memset((void *) kernal_base, 0,PAGE_SIZE*128);
+    //virtual address of first free page
+    //0x8030C000
+	//unsigned long kernal_base = (physfree + PG_DESC_SIZE*PAGE_SIZE) + VIRT_ST;
+
+    //memset 128 pages start from kernal_bass 
+	//memset((void *) kernal_base, 0,PAGE_SIZE*128);
 	PML4 = (pml4_t)kmalloc(KERNAL_TB,PAGE_SIZE);
+    //kprintf("address of PML4 %p \n", (PML4+VIRT_ST));
     //PML41 = (pml4_t)kmalloc(KERNAL_TB,PAGE_SIZE);
     //kprintf("address of PML4 %x \n", PML4);
     //kprintf("address of PML41 %x", PML41);
@@ -23,10 +24,21 @@ void init_kernalmem(unsigned long physfree){
 
 void init_virt_phy_mapping() {
     map_kernel(0x20C000);//test for 32M mapping 
+    kprintf("testing %x \n",PML4->PML4E[511]);
+    pdpt_t pdpt_tab;
+    pdt_t pdt_tab;
+    pt_t pt_tab;
+    pdpt_tab = (pdpt_t)((PML4->PML4E[511]&PERM_MASK));
+    kprintf("testing pdpt_tab %x \n",pdpt_tab->PDPTE[510]);
+    pdt_tab = (pdt_t)(pdpt_tab->PDPTE[510]&PERM_MASK);
+    kprintf("testing pdt_tab %x \n",pdt_tab->PDTE[1]);
+    pt_tab = (pt_t)(pdt_tab->PDTE[1]&PERM_MASK);
+    kprintf("testing pt_tab %x \n",pt_tab->PTE[0]&PERM_MASK);
     set_CR3((unsigned long) PML4);
+    //kprintf("123213");
 
     //__asm volatile("mov %0, %%cr3":: "b"(base_pgdir_addr));
-    //kprintf("testing %x \n",PML4->PML4E[0]);
+    //kprintf("testing %x \n",PML4->PML4E[511]);
     ///kprintf("testing %x \n",((pdpt_t)PML4->PML4E[0])->PDPTE[2]);
     //("testing %x \n",PML4->PML4E[2]);
 }
@@ -45,7 +57,7 @@ void map_kernel(unsigned long map_size){
     }
 }
 
-/*returned a physical address*/
+/*returned a physical address for allocated one page size*/
 void* kmalloc(int flag, unsigned int size){
     unsigned long res_addr = 0x0;
     switch(flag){
@@ -55,7 +67,7 @@ void* kmalloc(int flag, unsigned int size){
         default:
             res_addr = 0x0;
     }
-    //kprintf("kmalloc address returned %x \n", res_addr);
+//kprintf("kmalloc address returned %x \n", res_addr);
     memset(res_addr,0,4096);
     return (void*)res_addr;
 }
@@ -100,14 +112,7 @@ void vir_phy_mapping(unsigned long vir_addr, unsigned long phy_addr){
     unsigned long page_entry=phy_addr;
     page_entry=page_entry|PT_P|PT_U|PT_W; //set the page table flags
     pt_tab->PTE[page_tb_index]=page_entry;
-
-    //kprintf("pml4_index: %x  ",vir_addr);
-    kprintf("pml4_index: %d  ",pml4_index);
-    //kprintf("pdpt_tab->PDPTE[page_dir_pt_index] %x\n",pdpt_tab->PDPTE[page_dir_pt_index]);
-    //kprintf("pdt_tab->PDTE[page_dir_index] %x\n",pdt_tab->PDTE[page_dir_index]);
-   // kprintf("pdt_tab->PDTE[page_dir_index] %d\n",pt_tab->PTE[page_tb_index]);
-   // kprintf("phystart %x \n",VIRT_ST);
-
+   /// kprintf("pml4_index: %d page_tb_index: %d ",pml4_index, page_tb_index);
 }
 
 
@@ -119,6 +124,7 @@ unsigned long get_vir_from_phy(unsigned long phys_addr){
 
 void* set_pdpt(pml4_t pml4, unsigned long pml4_index, int is_kernal) {
     pdpt_t pdpt = (pdpt_t) kmalloc(KERNAL_TB,1);
+    //kprintf("pdpt table address %x \n", pdpt);
     unsigned long pdpt_entry = (unsigned long) pdpt;
     //pdpt_entry -= VIR_START; // convert to physical address
     if (is_kernal == USER_MALLOC) {
@@ -133,7 +139,10 @@ void* set_pdpt(pml4_t pml4, unsigned long pml4_index, int is_kernal) {
 
 
 void* set_pdt(pdpt_t pdpt, unsigned long pdpt_index, int is_kernal) {
+    //kprintf("set pdpt!!!!!!!!!!!! %x ,%d",pdpt,pdpt_index);
+
     pdt_t pdt = (pdt_t) kmalloc(KERNAL_TB,1);
+
     unsigned long pdt_entry = (unsigned long) pdt;
     //pdpt_entry -= VIR_START; // convert to physical address
     if (is_kernal == USER_MALLOC) {
@@ -142,13 +151,16 @@ void* set_pdt(pdpt_t pdpt, unsigned long pdpt_index, int is_kernal) {
     //set writtable and present bits
     pdt_entry |= (PT_P | PT_W);
     //pdpt_entry is physical address
+    //kprintf("pdt table address %x \n", pdt_entry);
     pdpt->PDPTE[pdpt_index] = pdt_entry;
+    //kprintf("pdt_entry %x \n",pdt_entry);
     return (void *) pdt;
 }
 
 
 void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
     pt_t pt = (pt_t) kmalloc(KERNAL_TB,1);
+    //kprintf("pt table address %x \n", pt);
     unsigned long pt_entry = (unsigned long) pt;
     //pdpt_entry -= VIR_START; // convert to physical address
     if (is_kernal == USER_MALLOC) {
@@ -162,29 +174,12 @@ void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
 }
 
 
-/*
-void set_CR3(unsigned long CR3) {
-    __asm volatile("mov %0, %%cr3":: "r"(CR3));
-}
-
-*/
-
 void set_CR3(pml4_t new_cr3){
  unsigned long base_pgdir_addr = (unsigned long)new_cr3;
  __asm volatile("mov %0, %%cr3":: "b"(base_pgdir_addr));
 
 }
-/*
-void test_pg_tb(unsigned char* address){
-    int n = 4096;
-    int i=0;
-    unsigned char* byte_array = address;
-    while(i<n){
-        kprintf("%X ",(unsigned)byte_array[i]);
-        i++;
-    }
-}
-*/
+
 
 void *memset(void *s, int ch , unsigned long n) {
     char* tmp = s;

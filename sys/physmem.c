@@ -22,16 +22,14 @@ get the first free page and allocate it.
 */
 unsigned long allocate_page(){
 	unsigned int pg_index = get_free_pg(free_pg_head);
+	kprintf("pg_index in allocate_page %d \n",pg_index);
 	//kprintf("pg_index in allocate_page %d \n",pg_index);
-	//kprintf("pg_index in allocate_page %d \n",pg_index);
-	page_t* pg = (page_t*)(physical_page_start ) + pg_index - 256;
+	page_t* pg = (page_t*)(physical_page_start ) + pg_index;
 	//kprintf("pg_index new 1 : %d \n", pg->pg_index);
 	pg->occup = PG_OCCU;
 
-	kprintf("page index %d",pg_index);
-	//kprintf("address returned %x \n",PG_DESC_SIZE*PAGE_SIZE+(physical_page_start-0xffffffff80000000UL));
-	//return (unsigned long)(pg_index - 1036 + PG_DESC_SIZE )*PAGE_SIZE+(physical_page_start-0xffffffff80000000UL);
-	return (unsigned long)(pg_index + PG_DESC_SIZE )*PAGE_SIZE;
+	//kprintf("page index %d",pg_index);
+	return (unsigned long)(pg_index)*PAGE_SIZE;
 }
 
 
@@ -53,50 +51,58 @@ unsigned int get_free_pg(){
 		return 0;
 	}
 }
- 
+
+
+//param (number: 780, index: 256, page_max_number: 24284)
+/*initialize a linkedlist like structure to store all page information start from physfree*/
 void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_max_number){
+	//size of page_t struct = 32 bytes
 	page_t *page_tmp;
+	//kprintf("sizeof(page_t) %d",sizeof(page_t));
 	unsigned int  i=0;
-	kprintf("index:  %x\n",index);
+
+	//create a linked_list liked structure
 	for(i=0;i<page_max_number;i++){
+		//increment a structure size
 		page_tmp=physical_page_start+i;
+		//set the pg_index of the structure
 		page_tmp->pg_index=index;
-		//used pages
+		//used pages where we marked as used pages 780 in our case
 		if(i<=number-1){
+			//set next free to null
 			page_tmp->next=NULL;
+			//set occupied as true
 			page_tmp->occup=PG_OCCU;
+			//set the count of ref as -1
 			page_tmp->ref_ct=-1;
 		}
 		//unused pages
 		else{
+			//before last unused page
 			if(i!=page_max_number-1){
+				//set the count of ref as -1
 				page_tmp->ref_ct=-1;
+				//set occupied as false
 				page_tmp->occup=PG_FREE;
+				//link the next free to next struct
 				page_tmp->next=page_tmp+1;
 			}
 			//last unused page
 			else{
 				page_tmp->ref_ct=-1;
 				page_tmp->occup=PG_FREE;
+				//no next page
 				page_tmp->next=NULL;
 			}
 		}
 		index++;
 	}
-	page_tmp=physical_page_start+1;
-	//kprintf("index: %x \n",page_tmp->pg_index);
-	//kprintf("occupied :%x \n",page_tmp->occup);
+
+	//make the free_pg_head as first unused page's linked list rep: 
+	//address of free_pg_head 0X7FFF80212180
 	free_pg_head=(page_t*)(physical_page_start+number);
-	//kprintf("%d",number);
-	//kprintf("headindex:%x,addr:%x \n",free_pg_head->pg_index,free_pg_head);
 
-	//allocate_page(free_pg_head->pg_index);
-	//kprintf(" new head index11: %x \n",free_pg_head->pg_index);
-	//kprintf("new head occupied11 :%x \n",free_pg_head->occup);
-
-
-
-
+	//kprintf("free_pg_head %p \n",free_pg_head);
 }
 
 int free_page(unsigned long index){

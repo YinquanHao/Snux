@@ -46,17 +46,38 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     }
   }
 
-kprintf("%d",memory_length>>12);
+//page_index = 256 here
 unsigned long page_index=smap_base_max>>12;
+//kprintf("page_inde x%d \n",page_index);
+
+//memory_length = 24284 pg
 memory_length=(memory_length>>12)-PG_DESC_SIZE;
+//kprintf("memory length %d \n",memory_length);
+
+//physical_page_start 0x8020C000  & physfree =  0x20c000
 physical_page_start= (page_t*)(0xffffffff80000000UL + physfree);
+//kprintf("physical_page_start %x \n",physical_page_start);
+
+//page_total_number = 24284 pg
 unsigned long page_total_number=memory_length;
+
+//used_page = 524 pgs, where is number of pages before physfree
 unsigned long used_page=(unsigned long)physfree>>12;
+//kprintf("used_page %d \n",used_page);
+
 //@todo:used page +257?
+
+//used page = 780, we mark the next 256 pg after physfree as used. Because we are going to use the 256 pgs to store 4 layers tables
 used_page=used_page+256;
-init_phy(used_page,page_index,page_total_number);
-kprintf("page_total_number %d",page_total_number);
-int pageNum=get_free_pg(free_pg_head);
+
+//param (used_page: 780,page_index: 256,page_total_number: 24284)
+//init_phy(used_page,page_index,page_total_number);
+init_phy(used_page,0,page_total_number);
+
+//kprintf("page_total_number %d",page_total_number);
+
+
+//int pageNum=get_free_pg(free_pg_head);
 
 
 //init_phy_page(8192, page_num, page_index);
@@ -71,6 +92,8 @@ int pageNum=get_free_pg(free_pg_head);
 kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 kprintf("physbase %p\n", (uint64_t)physbase);
 kprintf("physfree %p\n", (uint64_t)physfree);
+
+//physfree =  0x20c000
 init_kernalmem(physfree);
 
 init_virt_phy_mapping();
