@@ -7,40 +7,27 @@ pml4_t PML41;
 
 //physfree =  0x20c000
 void init_kernalmem(unsigned long physfree){
-	//kernal_base is the virtual address where actual kernal ends. The address is the start point we can used for kmalloc
-    //virtual address of first free page
-    //0x8030C000
-	//unsigned long kernal_base = (physfree + PG_DESC_SIZE*PAGE_SIZE) + VIRT_ST;
-
-    //memset 128 pages start from kernal_bass 
-	//memset((void *) kernal_base, 0,PAGE_SIZE*128);
+    //kmalloc a Page for PML4 table
 	PML4 = (pml4_t)kmalloc(KERNAL_TB,PAGE_SIZE);
-    //kprintf("address of PML4 %p \n", (PML4+VIRT_ST));
-    //PML41 = (pml4_t)kmalloc(KERNAL_TB,PAGE_SIZE);
-    //kprintf("address of PML4 %x \n", PML4);
-    //kprintf("address of PML41 %x", PML41);
 }
 
 
 void init_virt_phy_mapping() {
     map_kernel(0x20C000);//test for 32M mapping 
-    kprintf("testing %x \n",PML4->PML4E[511]);
+    mapping_test();
+    set_CR3((unsigned long) PML4);
+}
+
+void mapping_test(){
     pdpt_t pdpt_tab;
     pdt_t pdt_tab;
     pt_t pt_tab;
     pdpt_tab = (pdpt_t)((PML4->PML4E[511]&PERM_MASK));
-    kprintf("testing pdpt_tab %x \n",pdpt_tab->PDPTE[510]);
+    kprintf("testing pdpt_tab %x \n",pdpt_tab->PDPTE[510]&PERM_MASK);
     pdt_tab = (pdt_t)(pdpt_tab->PDPTE[510]&PERM_MASK);
-    kprintf("testing pdt_tab %x \n",pdt_tab->PDTE[1]);
+    kprintf("testing pdt_tab %x \n",pdt_tab->PDTE[1]&PERM_MASK);
     pt_tab = (pt_t)(pdt_tab->PDTE[1]&PERM_MASK);
     kprintf("testing pt_tab %x \n",pt_tab->PTE[0]&PERM_MASK);
-    set_CR3((unsigned long) PML4);
-    //kprintf("123213");
-
-    //__asm volatile("mov %0, %%cr3":: "b"(base_pgdir_addr));
-    //kprintf("testing %x \n",PML4->PML4E[511]);
-    ///kprintf("testing %x \n",((pdpt_t)PML4->PML4E[0])->PDPTE[2]);
-    //("testing %x \n",PML4->PML4E[2]);
 }
 
 
