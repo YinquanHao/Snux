@@ -1,10 +1,13 @@
 #include <sys/kprintf.h>
 #include <stdarg.h>
 #include <sys/defs.h>
+#include <sys/virtualmem.h>
 #define UINT32_MAX 4294967295
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
+#define VGA_ADDR 0xB8000+VIRT_ST
 extern int x,y;
+extern int is_bg_set;
 
 void print_int(unsigned int input, unsigned int format_length, char* display_buf, int* ptr);
 void printWrapper(char* display_buf, const char* format, va_list args);
@@ -91,13 +94,12 @@ void kprintf(const char *fmt, ...){
 	va_start(args, fmt);
 	printWrapper(buf,fmt,args);
 	va_end(args);
-	unsigned short * textptr = (unsigned short *)0xB8000+x+y*VGA_WIDTH;
+	
+	unsigned short * textptr = (unsigned short *)(VGA_ADDR)+x+y*VGA_WIDTH;
 	unsigned char *c = (uint8_t *)buf;
+
 	while (*c!='\0') {
-//*textptr=0xF1;
-//stextptr++;
-		if(*c=='\n'){
-			//*textptr = *c;				
+		if(*c=='\n'){			
 			textptr=textptr-x+VGA_WIDTH;
 			c++;
 			y++;
@@ -218,7 +220,7 @@ void kprintt(const char *fmt,...){
 	printWrapper(buf,fmt,args);
 	va_end(args);
 
-	unsigned short * textptr = (unsigned short *)0xB8000 +24*80;
+	unsigned short * textptr = (unsigned short *)(VGA_ADDR) +24*80;
 	unsigned char *c = (uint8_t *)buf;
 	while(*c=='0'){
 		*textptr++ = ' ';
@@ -238,7 +240,7 @@ void kprintkb(char state,char key){
 	//printWrapper(buf,fmt,args);
 	//va_end(args);
 
-	unsigned short * textptr = (unsigned short *)0xB8000+25*80;
+	unsigned short * textptr = (unsigned short *)(VGA_ADDR)+25*80;
 	*(textptr-1)=key|0xF1<<8;
 	*(textptr-2)=state|0xF1<<8;
 

@@ -7,15 +7,17 @@ pml4_t PML41;
 
 //physfree =  0x20c000
 void init_kernalmem(unsigned long physfree){
-    //kmalloc a Page for PML4 table
+    //kmalloc a Page for PML4
 	PML4 = (pml4_t)kmalloc(KERNAL_TB,PAGE_SIZE);
 }
 
 
 void init_virt_phy_mapping() {
     map_kernel(0x20C000);//test for 32M mapping 
+    vir_phy_mapping(VIRT_ST+0xB8000,0xB8000);
     mapping_test();
     set_CR3((unsigned long) PML4);
+    kprintf("asd");
 }
 
 void mapping_test(){
