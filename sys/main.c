@@ -98,7 +98,6 @@ init_kernalmem(physfree);
 
 init_virt_phy_mapping();
 
-
   //checkAll();
 
 /*int a=4779;

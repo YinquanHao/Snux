@@ -1,5 +1,6 @@
 #ifndef _PROCESS_H
 #define _PROCESS_H
+#include <sys/defs.h>
 
 
 typedef struct PCB {
