@@ -54,7 +54,7 @@ unsigned long page_index=smap_base_max>>12;
 memory_length=(memory_length>>12)-PG_DESC_SIZE;
 //kprintf("memory length %d \n",memory_length);
 
-//physical_page_start 0x8020C000  & physfree =  0x20c000
+//physical_page_start ,,m  & physfree =  0x20c000
 physical_page_start= (page_t*)(0xffffffff80000000UL + physfree);
 //kprintf("physical_page_start %x \n",physical_page_start);
 
@@ -129,11 +129,10 @@ void boot(void)
 //kprintf("bbbbbbbbbbbbbbbbbbbbbbbb");
   
 __asm__("sti");
-  init_gdt();
+init_gdt();
 idt_clear();
 //pic_remap();
 idt_load();
-
 idt_install();
 irq_install();
 //isrs_install();
