@@ -8,7 +8,7 @@ extern page_t* free_pg_head;
 //page_t* physical_page_start;
 //page_t* free_pg_head;
 
-//get the start of physical mem that can be used my kmalloc
+//get the start of physical mem that can be used my free_pg_head
 /*unsigned long  get_kmalloc_base(unsigned long physfree, unsigned long smap_base) {
 	//phyfree>>12 -> get num of pages total below physfreee
 	physfree = (physfree>>12)+((physfree-smap_base)>>12);
@@ -22,7 +22,7 @@ get the first free page and allocate it.
 */
 unsigned long allocate_page(){
 	unsigned int pg_index = get_free_pg(free_pg_head);
-	kprintf("pg_index in allocate_page %d \n",pg_index);
+	//kprintf("pg_index in allocate_page %d \n",pg_index);
 	//kprintf("pg_index in allocate_page %d \n",pg_index);
 	page_t* pg = (page_t*)(physical_page_start ) + pg_index;
 	//kprintf("pg_index new 1 : %d \n", pg->pg_index);
@@ -101,8 +101,9 @@ void init_phy(unsigned long  number, unsigned long  index, unsigned long  page_m
 	//make the free_pg_head as first unused page's linked list rep: 
 	//address of free_pg_head 0X7FFF80212180
 	free_pg_head=(page_t*)(physical_page_start+number);
+	//free_pg_head = (unsigned long)free_pg_head + VIRT_ST;
 
-	//kprintf("free_pg_head %p \n",free_pg_head);
+	kprintf("free_pg_head %x \n",free_pg_head);
 }
 
 int free_page(unsigned long index){

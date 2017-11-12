@@ -11,6 +11,7 @@
 #include <sys/pci.h>
 #include <sys/physmem.h>
 #include <sys/virtualmem.h>
+#include <sys/process.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -74,6 +75,8 @@ used_page=used_page+256;
 //init_phy(used_page,page_index,page_total_number);
 init_phy(used_page,0,page_total_number);
 
+
+
 //kprintf("page_total_number %d",page_total_number);
 
 
@@ -93,10 +96,26 @@ kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 kprintf("physbase %p\n", (uint64_t)physbase);
 kprintf("physfree %p\n", (uint64_t)physfree);
 
+
+
 //physfree =  0x20c000
 init_kernalmem(physfree);
 
+
 init_virt_phy_mapping();
+
+
+//page_t* head = get_vir_from_phy(free_pg_head);
+//unsigned long index = free_pg_head->pg_index;
+//kprintf("head index %d \n",index);
+
+//kprintf("checl %d",free_pg_head->pg_index);
+//void* addr = kmalloc(KERNAL_MEM,1);
+
+
+//kprintf("malloc %x",addr);
+
+task_struct* idle = create_kthread(NULL,"idle");
 
   //checkAll();
 
@@ -128,6 +147,7 @@ void boot(void)
 //kprintf("bbbbbbbbbbbbbbbbbbbbbbbb");
   
 __asm__("sti");
+
 init_gdt();
 idt_clear();
 //pic_remap();
@@ -139,8 +159,6 @@ irq_install();
 
 //checkAll();
 //kprintf("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-
-
 
 
 //__asm__ __volatile__ ("int $32");

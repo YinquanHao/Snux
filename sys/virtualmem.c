@@ -13,11 +13,10 @@ void init_kernalmem(unsigned long physfree){
 
 
 void init_virt_phy_mapping() {
-    map_kernel(0x20C000);//test for 32M mapping 
+    map_kernel(0x20C000); 
     vir_phy_mapping(VIRT_ST+0xB8000,0xB8000);
     mapping_test();
     set_CR3((unsigned long) PML4);
-    kprintf("asd");
 }
 
 void mapping_test(){
@@ -25,20 +24,20 @@ void mapping_test(){
     pdt_t pdt_tab;
     pt_t pt_tab;
     pdpt_tab = (pdpt_t)((PML4->PML4E[511]&PERM_MASK));
-    kprintf("testing pdpt_tab %x \n",pdpt_tab->PDPTE[510]&PERM_MASK);
+    //kprintf("testing pdpt_tab %x \n",pdpt_tab->PDPTE[510]&PERM_MASK);
     pdt_tab = (pdt_t)(pdpt_tab->PDPTE[510]&PERM_MASK);
-    kprintf("testing pdt_tab %x \n",pdt_tab->PDTE[1]&PERM_MASK);
+    //kprintf("testing pdt_tab %x \n",pdt_tab->PDTE[1]&PERM_MASK);
     pt_tab = (pt_t)(pdt_tab->PDTE[1]&PERM_MASK);
-    kprintf("testing pt_tab %x \n",pt_tab->PTE[0]&PERM_MASK);
+    //kprintf("testing pt_tab %x \n",pt_tab->PTE[0]&PERM_MASK);
 }
 
 
 void map_kernel(unsigned long map_size){
     unsigned long vir_st  = VIRT_ST+0x200000;
     unsigned long phy_st = 0x200000;
-   // unsigned long phy_st = 0x20C000;
+   // unsigned long phy_st = 0x20C000;60DB000
     //int k=0;
-    while(phy_st<0x20C000){
+    while(phy_st<0x60DB000){
         vir_phy_mapping(vir_st,phy_st);
         vir_st += PAGE_SIZE; //*20000;
         phy_st += PAGE_SIZE; //*20000;
@@ -52,12 +51,16 @@ void* kmalloc(int flag, unsigned int size){
     switch(flag){
         case KERNAL_TB:
             res_addr = allocate_page();
+            memset(res_addr,0,4096);
             break;
+        case KERNAL_MEM:
+            res_addr = allocate_page();
+            memset(get_vir_from_phy(res_addr),0,4096);
+            break;
+
         default:
             res_addr = 0x0;
     }
-//kprintf("kmalloc address returned %x \n", res_addr);
-    memset(res_addr,0,4096);
     return (void*)res_addr;
 }
 
