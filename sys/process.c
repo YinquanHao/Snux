@@ -2,6 +2,7 @@
 #include <sys/virtualmem.h>
 #include <sys/defs.h>
 #include <sys/kprintf.h>
+#include <sys/gdt.h>
 // end store the last struct
 task_struct* end;
 
@@ -52,4 +53,62 @@ void add_task(task_struct * task) {
 	}else{
 		end = task;
 	}
+}
+
+void context_switch(task_struct *me,task_struct *next){
+	
+	//set_tss_rsp(next->kernel_stack_base);
+	//set_tss_rsp(next->kstack);
+	__asm volatile(
+		"pushq %rax;"
+		"pushq %rbx;"
+		"pushq %rcx;"
+		"pushq %rdx;"
+		"pushq %rdi;"
+		"pushq %rsi;"
+		"pushq %rbp;"
+		"pushq %r8;"
+		"pushq %r9;"
+		"pushq %r10;"
+		"pushq %r11;"
+		"pushq %r12;"
+		"pushq %r13;"
+		"pushq %r14;"
+		"pushq %r15;"
+	);
+
+	__asm volatile("movq %%rsp, %0"
+            :"=r"(me->rsp)
+    );
+
+    __asm volatile("movq %0, %%rsp"
+            ::"r"(next->rsp)
+    );
+
+    /*__asm volatile("movq %0, %%cr3;"
+            ::"r"(next->cr3)
+    );*/
+
+	__asm volatile(
+		"popq %r15;"
+		"popq %r14;"
+		"popq %r13;"
+		"popq %r12;"
+		"popq %r11;"
+		"popq %r10;"
+		"popq %r9;"
+		"popq %r8;"
+		"popq %rbp;"
+		"popq %rsi;"
+		"popq %rdi;"
+		"popq %rdx;"
+		"popq %rcx;"
+		"popq %rbx;"
+		"popq %rax;"
+	);
+
+    me->state=SLEEPING;
+    next->state=RUNNING;
+    //kprintf("switch!");
+
 }

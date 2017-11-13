@@ -16,5 +16,6 @@ task_struct* create_kthread( void (*fn)(int));
 void add_task(task_struct * task);
 void init_pid();
 int get_pid();
+void context_switch(task_struct *me,task_struct *next);
 
 #endif
