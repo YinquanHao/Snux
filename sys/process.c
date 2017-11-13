@@ -38,6 +38,7 @@ task_struct* create_kthread( void (*fn)(int)){
 	task->kstack = (uint64_t)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
 	task->state = 1;
 	task->exit_status = 0;
+	task->rip = (uint64_t) fn;
 	//make to stack pointer points to last element in the kstack
 	task->rsp = task->kstack + 4096;
 	add_task(task);
@@ -111,4 +112,9 @@ void context_switch(task_struct *me,task_struct *next){
     next->state=RUNNING;
     //kprintf("switch!");
 
+}
+
+
+void print_kthread(){
+	kprintf("thread id");
 }

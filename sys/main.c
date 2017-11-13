@@ -115,8 +115,8 @@ init_virt_phy_mapping();
 
 //kprintf("malloc %x",addr);
 
-task_struct* idle = create_kthread(NULL);
-task_struct* idle2 = create_kthread(NULL);
+task_struct* idle = create_kthread(print_kthread);
+task_struct* idle2 = create_kthread(print_kthread);
 
 kprintf("pid1 %d \n",idle->pid);
 kprintf("pid2 %d \n",idle2->pid);

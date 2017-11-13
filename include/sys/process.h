@@ -6,6 +6,7 @@ typedef struct PCB {
 	char* kstack;
 	uint64_t pid;
 	uint64_t rsp;
+	uint64_t rip;
 	struct PCB* next;
 	enum { RUNNING, SLEEPING, ZOMBIE } state;
 	int exit_status;
@@ -17,5 +18,5 @@ void add_task(task_struct * task);
 void init_pid();
 int get_pid();
 void context_switch(task_struct *me,task_struct *next);
-
+void print_kthread();
 #endif
