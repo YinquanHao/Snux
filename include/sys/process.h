@@ -13,10 +13,12 @@ typedef struct PCB {
 } task_struct;
 
 
-task_struct* create_kthread( void (*fn)(int));
+task_struct* create_kthread(/* void (*fn)(int)*/void* thread);
+void create_init_kthread( void (*fn)(int));
 void add_task(task_struct * task);
 void init_pid();
 int get_pid();
 void context_switch(task_struct *me,task_struct *next);
 void print_kthread();
+void func_a();
 #endif

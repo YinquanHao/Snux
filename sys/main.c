@@ -17,6 +17,7 @@
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
+extern task_struct* first;
 //@todo: declare these structs will divide the availbe memory into 3 parts 
 page_t* physical_page_start;
 page_t* free_pg_head;
@@ -104,6 +105,7 @@ init_kernalmem(physfree);
 
 init_virt_phy_mapping();
 
+init_pid();
 
 //page_t* head = get_vir_from_phy(free_pg_head);
 //unsigned long index = free_pg_head->pg_index;
@@ -114,12 +116,18 @@ init_virt_phy_mapping();
 
 
 //kprintf("malloc %x",addr);
+//create_init_kthread( print_kthread);
+task_struct* idle = create_kthread(func_a);
+//task_struct* t1 = create_kthread(print_kthread);
+//kprintf("%x",first->kstack);
+//kprintf("%x",first->next->kstack);
+while(1);
 
-task_struct* idle = create_kthread(print_kthread);
-task_struct* idle2 = create_kthread(print_kthread);
+//schedule();
+//task_struct* idle2 = create_kthread(print_kthread);
 
-kprintf("pid1 %d \n",idle->pid);
-kprintf("pid2 %d \n",idle2->pid);
+//kprintf("pid1 %d \n",idle->pid);
+//kprintf("pid2 %d \n",idle2->pid);
 
   //checkAll();
 
