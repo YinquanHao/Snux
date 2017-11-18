@@ -34,7 +34,7 @@ int get_pid(){
 	return -1;
 }
 
-
+/*create the init_kthread, the init_kthread would take over the functionality of main thread*/
 task_struct* create_init_kthread(){
 	//kmalloc a task_struct for new kthread
 	task_struct *task = (task_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
@@ -70,7 +70,7 @@ task_struct* create_init_kthread(){
 }
 
 
-
+/*create new kthread*/
 task_struct* create_new_kthread(void* thread){
 	//kmalloc a task_struct for new kthread
 	task_struct *task = (task_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
@@ -81,15 +81,15 @@ task_struct* create_new_kthread(void* thread){
 	//assign an pid for the thread
 	task->pid = get_pid();
 	//make rip points to the initial function
-	task->rip=(uint64_t) &print_thread;
+	task->rip=(uint64_t) thread;
 	//TODO @yinquanhao state and exit_status for the task (Need to modify later not correct)
 	task->state = 1;
 	task->exit_status = 0;
 	//add task (initialize and keep track of the  first, end and current task structure)
 	add_task(task);
 	//push the rip to the kstack
-	*task->kstack = print_thread;
-	//task->kstack-=14;
+	*task->kstack = thread;
+	//fake we pushed some thing to the kstack, kstack grow downwords
 	task->rsp -=15*8;
 	//return new task
 	return task;
@@ -100,28 +100,22 @@ task_struct* create_new_kthread(void* thread){
 void add_task(task_struct * task) {
 	/*the case of the task is initial task*/
 	if (first == NULL){
-		//kprintf("enter this\n");
 		first=task;
 		current=task;
 		end=task;
 		task->next = task;
-		//current->next = end;
-		//kprintf("fist rsp!: %x \n",first->rsp);
 	}
 	/*normal case for adding task*/
 	else{
 		end->next=task;
 		end=task;
 		end->next=first;
-
-		//kprintf("fist rsp: %x \n",first->rsp);
 	}
 }
 
 void context_switch(task_struct *me,task_struct *next){
 	current = current->next;
 	//push all registers on current thread's stack
-	//0xffffffff80343fd0
 	__asm__ __volatile__ (
 		"pushq %rax;"
 		"pushq %rbx;"
@@ -140,19 +134,12 @@ void context_switch(task_struct *me,task_struct *next){
 		"pushq %r15;"
 	);
 
-	//0xffffffff80343f58
-
 	//save rsp register in current thread's context
 	__asm__ __volatile__ (	
 		"movq %%rsp, %0"
 		:"=r"(me->rsp)
 	);
 	
-	//current=current->next;
-	uint64_t* next_rsp = (next->rsp);
-	//kprintf("next_rsp %x",*next_rsp);
-	//while(1);
-
 	//change the rsp register with next thread's stack
 	__asm__ __volatile__ (	
 		"movq %0, %%rsp"::"r"(next->rsp)
@@ -176,8 +163,6 @@ void context_switch(task_struct *me,task_struct *next){
 		"popq %rax;"
 	);
 
-	//while(1);
-
 	__asm__ __volatile__ (
 		"ret"
 	);
@@ -191,23 +176,22 @@ void init_thread_fn(){
 	schedule();
 	kprintf("xxxxxxxxxxxxxxxxxxxxxx");
 	schedule();
-	//schedule();
 	kprintf("bbbbbbbbbbbbbbbbbbbbbbb");
-	while(1){
-		//kprintf("enter init_thread_fn");
-		//schedule();
-	}
+	schedule();
+	while(1);
 }
 
+/*the dummy function for testing*/
 void print_thread(){
 	kprintf("Thread 1 \n");
 	schedule();
 	kprintf("Thread 2 \n");
 	schedule();
+	kprintf("Thread 3 \n");
 	while(1);
 }
 
-
+/*schedule function*/
 void schedule(){
 	context_switch(current,current->next);
 }
