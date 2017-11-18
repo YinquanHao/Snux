@@ -107,20 +107,18 @@ init_virt_phy_mapping();
 
 init_pid();
 
-//page_t* head = get_vir_from_phy(free_pg_head);
-//unsigned long index = free_pg_head->pg_index;
-//kprintf("head index %d \n",index);
 
-//kprintf("checl %d",free_pg_head->pg_index);
-//void* addr = kmalloc(KERNAL_MEM,1);
+task_struct* idle = create_init_kthread();
 
 
-//kprintf("malloc %x",addr);
-//create_init_kthread( print_kthread);
+
+
+/*
 task_struct* idle = create_kthread(func_a);
-//task_struct* t1 = create_kthread(print_kthread);
-//kprintf("%x",first->kstack);
-//kprintf("%x",first->next->kstack);
+task_struct* t2 = create_kthread(print_kthread);
+schedule();
+*/
+
 while(1);
 
 //schedule();
