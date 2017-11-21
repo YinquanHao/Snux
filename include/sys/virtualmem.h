@@ -1,5 +1,6 @@
 #ifndef _VIRTUALMEM_H
 #define _VIRTUALMEM_H
+#include <sys/defs.h>
 
 #define VIRT_ST 0xFFFFFFFF80000000UL
 #define PAGE_SIZE 0x1000 //4KB for each PAGE_SIZE
@@ -55,4 +56,7 @@ void map_kernel(unsigned long map_size);
 void init_virt_phy_mapping();
 void mapping_test();
 void set_CR3(pml4_t new_cr3);
+uint64_t get_CR3();
+void* set_user_addr_space();
+
 #endif

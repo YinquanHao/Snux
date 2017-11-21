@@ -122,6 +122,10 @@ void* set_pdpt(pml4_t pml4, unsigned long pml4_index, int is_kernal) {
     if (is_kernal == USER_MALLOC) {
         pdpt_entry |= PT_U;
     }
+
+    //for test ring3
+    pdpt_entry |= PT_U;
+
     //set writtable and present bits
     pdpt_entry |= (PT_P | PT_W);
     /*pdpt_entry is physical address*/
@@ -140,6 +144,10 @@ void* set_pdt(pdpt_t pdpt, unsigned long pdpt_index, int is_kernal) {
     if (is_kernal == USER_MALLOC) {
         pdt_entry |= PT_U;
     }
+
+    //for test ring3
+    pdt_entry |= PT_U;
+
     //set writtable and present bits
     pdt_entry |= (PT_P | PT_W);
     //pdpt_entry is physical address
@@ -158,6 +166,11 @@ void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
     if (is_kernal == USER_MALLOC) {
         pt_entry |= PT_U;
     }
+
+    //for test ring3
+    pt_entry |= PT_U;
+
+
     //set writtable and present bits
     pt_entry |= (PT_P | PT_W);
     /*pdpt_entry is physical address*/
@@ -167,9 +180,25 @@ void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
 
 
 void set_CR3(pml4_t new_cr3){
- unsigned long base_pgdir_addr = (unsigned long)new_cr3;
- __asm volatile("mov %0, %%cr3":: "b"(base_pgdir_addr));
+    unsigned long base_pgdir_addr = (unsigned long)new_cr3;
+    __asm volatile("mov %0, %%cr3":: "b"(base_pgdir_addr));
 
+}
+
+uint64_t get_CR3(){
+    uint64_t res;
+    __asm volatile("mov %%cr3, %0" : "=r"(res));
+    return res;
+}
+
+void *set_user_addr_space(){
+    //create a new space for new PML4 table in user_process(virtual addr)
+    pml4_t new_PML4 = (pml4_t)get_vir_from_phy(allocate_page());
+    //get the current PML4 table (virtual addr)
+    pml4_t cur_PML4 = (pml4_t)get_vir_from_phy(get_CR3());
+    //TODO YinquanHao  map the kernel page table for the process???
+    new_PML4->PML4E[511] = cur_PML4->PML4E[511];
+    return (void*)new_PML4;
 }
 
 
