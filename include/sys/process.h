@@ -2,6 +2,11 @@
 #define _PROCESS_H
 #include <sys/defs.h>
 #define PROCESS_NUM 2048
+#define CODE_VMA 0;
+#define DATA_VMA 1;
+#define HEAP_VMA 2;
+#define STACK_VMA 3;
+
 typedef struct vma_struct vma_struct;
 typedef struct mm_struct mm_struct;
 
@@ -9,7 +14,9 @@ typedef struct PCB {
 	uint64_t pid;
 	uint64_t rsp;
 	uint64_t rip;
+	uint64_t cr3;
 	struct PCB* next;
+	mm_struct* mm;
 	enum { RUNNING, SLEEPING, ZOMBIE } state;
 	int exit_status;
 	uint64_t* kstack;
@@ -48,4 +55,6 @@ void print_thread();
 void user_func();
 void switch_to_ring3();
 task_struct* create_user_process();
+void set_user_task_struct_mm(task_struct* task);
+vma_struct* select_vma_by_type();
 #endif

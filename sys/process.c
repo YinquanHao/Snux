@@ -99,6 +99,16 @@ task_struct* create_new_kthread(void* thread){
 
 task_struct* create_user_process(){
     task_struct *task = (task_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
+    
+    void* prev_cr3 = get_CR3();
+    void* new_PML4 = set_user_addr_space();
+    new_PML4 = ((uint64_t)new_PML4)^VIRT_ST;
+    task->cr3 = new_PML4;
+    set_CR3((pml4_t)new_PML4);
+
+
+
+
     void* stack=(void *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
     //task->mm=(mm_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1)); 
     int pid=get_pid();
@@ -106,9 +116,23 @@ task_struct* create_user_process(){
     task->rsp=task->kstack=((uint64_t)stack +0x1000-16);
     //task->rip=(uint64_t)&thread2_func;
     //task->cr3=get_CR3();
+    //uint64_t cr3 = get_CR3();
+    //kprintf("cr3 val %x",cr3);
+
+
+
+
+
+    set_user_task_struct_mm(task);
+
+
+
     *task->kstack=&user_func;
     task->rsp -=15*8;
+
+    set_CR3((pml4_t)prev_cr3);
     add_task(task);
+
 
     return task;
 }
@@ -215,7 +239,7 @@ void init_thread_fn(){
 
 
 
-	
+
 	/*uncomment for testing ring3*/
 	task_struct* thread1 = create_user_process();
 	schedule();
@@ -251,6 +275,8 @@ void print_thread(){
 	kprintf("Thread 3 \n");
 	schedule();
 	*/
+
+
 	switch_to_ring3(current);
 	while(1);
 }
@@ -264,4 +290,42 @@ void schedule(){
 void user_func(){
 	kprintf("testing for r3\n");
 	while(1);
+}
+
+
+void set_user_task_struct_mm(task_struct* task){
+	//allocate space for mm struct in task
+	mm_struct* mm = get_vir_from_phy(kmalloc(KERNAL_MEM,0));
+	//set the newly created mm struct as the mm_struct in the process
+	task->mm = mm;
+	//allocate space for code vma in task
+    vma_struct* code_vma = get_vir_from_phy(kmalloc(KERNAL_MEM,0));
+    //allocate space for data vma in task
+    vma_struct* data_vma = get_vir_from_phy(kmalloc(KERNAL_MEM,0));
+    //allocate space for heap vma in task
+    vma_struct* heap_vma = get_vir_from_phy(kmalloc(KERNAL_MEM,0));
+    //allocate space for stack vma in task
+    vma_struct* stack_vma = get_vir_from_phy(kmalloc(KERNAL_MEM,0));
+    //make the mm referece in vma points back to mm struct of the process
+    code_vma->mm = mm;
+    data_vma->mm = mm;
+    heap_vma->mm = mm;
+    stack_vma->mm = mm;
+    /*make the vma_list link them together code->data->heap->stack->NULL*/
+    mm->mmap = code_vma;
+    code_vma->next = data_vma;
+    data_vma->next = heap_vma;
+    heap_vma->next = stack_vma;
+    stack_vma->next = NULL;
+}
+
+//select vma by type of the type
+vma_struct* select_vma_by_type(mm_struct* mm, uint64_t type){
+	vma_struct *cur = mm->mmap;
+	while(cur){
+		if((cur->type)==type){
+			return cur;
+		}
+	}
+	return NULL;
 }

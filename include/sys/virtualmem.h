@@ -9,6 +9,7 @@
 #define TABLE_SIZE 512
 #define KERNAL_TB 0
 #define KERNAL_MEM 1
+#define USER_MEM 2
 #define PG_DESC_SIZE 256
 #define PML4_OFFSET 39
 #define PDPT_OFFSET 30
