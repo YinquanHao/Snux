@@ -166,23 +166,41 @@ int load_elf(task_struct* task, void* exe){
 	task->rsp = (uint64_t)((uint64_t)stack + 4096 - 16);
 */
 	//mm_struct *mm = task->mm;
-	user_space_allocate(USER_STACK_TOP);
-	vma_struct *vma_stack = (vma_struct*)(USER_STACK_TOP);
+	
+	user_space_allocate(USER_STACK_TOP-PAGE_SIZE);
+	vma_struct *vma_stack = (vma_struct*)(USER_STACK_TOP-PAGE_SIZE);
 	if(mm->mmap == NULL)
 		mm->mmap = vma_stack;
     else
     	mm->current->next = vma_stack;
     mm->current = vma_stack;	
-
 	uint64_t *stack = USER_STACK_TOP;	
-	vma_stack->start = (uint64_t)stack; 
-	vma_stack->end = (uint64_t)stack - PAGE_SIZE;
+	vma_stack->start = (uint64_t)(stack-PAGE_SIZE); 
+	vma_stack->end = (uint64_t)stack;
 	vma_stack->flags = (PERM_R | PERM_W);
 	vma_stack->type = STACK;
 	vma_stack->file = NULL;
 	vma_stack->next = NULL;
-
 	task->rsp = (uint64_t)((uint64_t)stack - 16);
+
+
+	user_space_allocate(HEAP_START);
+	vma_struct *vma_heap = (vma_struct*)(HEAP_START);
+	if(mm->mmap == NULL)
+		mm->mmap = vma_heap;
+    else
+    	mm->current->next = vma_heap;
+    mm->current = vma_heap;	
+	uint64_t *heap = HEAP_START;	
+	vma_heap->start = (uint64_t)(HEAP_START); 
+	vma_heap->end = (uint64_t)(HEAP_START+PAGE_SIZE);
+	vma_heap->flags = (PERM_R | PERM_W);
+	vma_heap->type = HEAP;
+	vma_heap->file = NULL;
+	vma_heap->next = NULL;
+	//task->rsp = (uint64_t)((uint64_t)stack - 16);
+
+
 	return 0;
 
 	

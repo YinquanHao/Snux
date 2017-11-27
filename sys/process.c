@@ -130,7 +130,7 @@ task_struct* create_user_process(char* filename){
 
     kprintf("%x",b);
 
-    task->vir_top = HEAP_LIMIT;
+    task->vir_top = VMA_VA_ST;
     //allocate the user_space and map it into vir_top
     user_space_allocate(task->vir_top);
     //make the mm struct points to the  mm
