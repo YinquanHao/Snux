@@ -2,10 +2,17 @@
 #define _PROCESS_H
 #include <sys/defs.h>
 #define PROCESS_NUM 2048
-#define CODE_VMA 0;
-#define DATA_VMA 1;
-#define HEAP_VMA 2;
-#define STACK_VMA 3;
+#define CODE_VMA 0
+#define DATA_VMA 1
+#define HEAP_VMA 2
+#define STACK_VMA 3
+#define USER_STACK_TOP	0xFFFFFFFFF0000000UL
+#define USER_STACK_LIMIT 0xFFFFFFFFEFF60000UL //the lowest address of user stack 160pgs
+#define HEAP_START		0xFFFFFFFF80000000UL
+#define HEAP_LIMIT 0xFFFFFFFF800A0000UL //the highest address of heap can reach 160pgs
+//for tesing 
+#define heap_end  0x8000
+#define stack_end 0x8000
 
 typedef struct vma_struct vma_struct;
 typedef struct mm_struct mm_struct;
@@ -15,6 +22,7 @@ typedef struct PCB {
 	uint64_t rsp;
 	uint64_t rip;
 	uint64_t cr3;
+	uint64_t vir_top;
 	struct PCB* next;
 	mm_struct* mm;
 	enum { RUNNING, SLEEPING, ZOMBIE } state;
@@ -42,6 +50,22 @@ struct vma_struct {
 };
 
 
+struct regs{
+	uint64_t rsp,rbp,rdi,rsi,rdx,rcx,rbx,rax;
+	uint64_t r15,r14,r13,r12,r11,r10,r9,r8;
+	uint64_t idx,err_code;
+
+};
+
+enum vma_types {	
+		TEXT,
+		DATA,
+		STACK,
+		HEAP,
+		NOTYPE
+	};
+
+
 task_struct* create_kthread(/* void (*fn)(int)*/void* thread);
 //void create_init_kthread( void (*fn)(int));
 void add_task(task_struct * task);
@@ -54,7 +78,9 @@ task_struct* create_new_kthread();
 void print_thread();
 void user_func();
 void switch_to_ring3();
-task_struct* create_user_process();
+task_struct* create_user_process(char* filename);
 void set_user_task_struct_mm(task_struct* task);
 vma_struct* select_vma_by_type();
+task_struct* get_current_task();
+void user_space_allocate(uint64_t viraddr);
 #endif

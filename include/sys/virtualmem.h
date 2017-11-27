@@ -16,13 +16,24 @@
 #define PDT_OFFSET  21
 #define PT_OFFSET   12
 #define KERNAL_MALLOC 1
-#define USER_MALLOC 0
+#define USER_MALLOC 2
 #define PERM_MASK 0xFFFFFFFFFFFFF000 //mask the permission bits
 
 #define PT_P 0x001 //present
 #define PT_W 0x002 //writable
 #define PT_U 0x004 //user
 
+#define PML4_LEVEL 1
+#define PDPT_LEVEL 2
+#define PDT_LEVEL 3
+#define PT_LEVEL 4
+
+
+
+#define PML4_SELF 0xFFFFFF7FBFDFE000
+#define PDPT_SELF 0xFFFFFF7FBFC00000
+#define PDT_SELF  0xFFFFFF7F80000000
+#define PT_SELF   0xFFFFFF0000000000
 struct pml4t {
     unsigned long  PML4E[TABLE_SIZE];
 };
@@ -59,5 +70,13 @@ void mapping_test();
 void set_CR3(pml4_t new_cr3);
 uint64_t get_CR3();
 void* set_user_addr_space();
+uint64_t get_physical_addr(uint64_t vaddr);
+void user_process_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_PML4,uint64_t flags);
+void user_process_mapping_v2(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_PML4,uint64_t flags);
+uint64_t allocate_vir_page(uint64_t vaddr,uint64_t flags);
+void *memcpy(void *dest,const void *src,uint64_t n);
+void test_self_ref();
 
+uint64_t get_tb_virtual_addr(uint64_t level, uint64_t entry_belong_to);
+uint64_t get_tb_virt_addr(uint64_t level, uint64_t virt_addr);
 #endif

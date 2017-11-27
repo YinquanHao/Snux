@@ -105,6 +105,8 @@ init_kernalmem(physfree);
 
 init_virt_phy_mapping();
 
+//511 510 1 12
+
 init_pid();
 
 

@@ -97,43 +97,66 @@ task_struct* create_new_kthread(void* thread){
 	return task;
 }
 
-task_struct* create_user_process(){
+task_struct* create_user_process(char* filename){
+
+	posix_header_t *hd = get_binary(filename);
+
     task_struct *task = (task_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
     
-    void* prev_cr3 = get_CR3();
-    void* new_PML4 = set_user_addr_space();
-    new_PML4 = ((uint64_t)new_PML4)^VIRT_ST;
-    task->cr3 = new_PML4;
-    set_CR3((pml4_t)new_PML4);
-
-
-
-
-    void* stack=(void *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
-    //task->mm=(mm_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1)); 
+   	//get the pid for the process
     int pid=get_pid();
+    //set the pid
     task->pid=pid;
-    task->rsp=task->kstack=((uint64_t)stack +0x1000-16);
-    //task->rip=(uint64_t)&thread2_func;
-    //task->cr3=get_CR3();
-    //uint64_t cr3 = get_CR3();
-    //kprintf("cr3 val %x",cr3);
+    //set the rsp
+
+    //get the prev_cr3 and store it in prev_cr3
+    void* prev_cr3 = get_CR3();
+    //create new pml4 and this pml4 is in kernel space
+    void* new_PML4 = set_user_addr_space();
+    //mask the new_PML4's address back to physical
+    new_PML4 = ((uint64_t)new_PML4)^VIRT_ST;
+    //set the task->cr3 to new created PML4 (physical)
+    task->cr3 = new_PML4;
+    //set the cr3 to new PML4
+    set_CR3((pml4_t)new_PML4);
+    //set the virtual_addr in  task as the HEAP_LIMIT
+    //PML4_SEL
+
+    uint64_t a = get_tb_virt_addr(PML4_LEVEL,HEAP_LIMIT);
+
+    kprintf("%x",a);
+
+    uint64_t b = get_physical_addr(a);
+
+    kprintf("%x",b);
+
+    task->vir_top = HEAP_LIMIT;
+    //allocate the user_space and map it into vir_top
+    user_space_allocate(task->vir_top);
+    //make the mm struct points to the  mm
+    mm_struct *mm = (mm_struct *)(task->vir_top);
+    //increment the vir_top as one pg size
+    task->vir_top+=PAGE_SIZE;
+    //set task
+	task->mm = mm;
 
 
 
 
-
-    set_user_task_struct_mm(task);
-
-
-
-    *task->kstack=&user_func;
-    task->rsp -=15*8;
-
+	//allocate a kernel stack in user_space and map the phys addr to task->virtop
+	user_space_allocate(task->vir_top);
+    //make the stack points to task->vir_top
+    void* stack=(void *)(task->vir_top);
+    //increment the virtop as one pg size
+    task->vir_top+=PAGE_SIZE;
+    //points to the kstack to the highest addr of kernel stack
+    task->kstack=((uint64_t)stack +0x1000-16);
+    //load the elf
+    load_elf(task,(void*)(hd+1));
+    //set the cr3 back to previous
     set_CR3((pml4_t)prev_cr3);
+    //add task
     add_task(task);
-
-
     return task;
 }
 
@@ -175,6 +198,11 @@ void add_task(task_struct * task) {
 		end=task;
 		end->next=first;
 	}
+}
+
+
+task_struct* get_current_task(){
+	return current;
 }
 
 void context_switch(task_struct *me,task_struct *next){
@@ -235,14 +263,15 @@ void context_switch(task_struct *me,task_struct *next){
 
 /*use this function as our main thread*/
 void init_thread_fn(){
-	kprintf("enter init_thread_fn");
+	kprintf("enter init_thread_fn\n");
 
+	//get_binary("123");
 
-
-
+	//while(1);
 	/*uncomment for testing ring3*/
-	task_struct* thread1 = create_user_process();
-	schedule();
+	task_struct* thread1 = create_user_process("test/test");
+
+	//schedule();
 
 
 
@@ -254,7 +283,7 @@ void init_thread_fn(){
 	schedule();
 	kprintf("bbbbbbbbbbbbbbbbbbbbbbb");
 	schedule();
-	set_user_addr_space();
+	user_space_allocate();
 	char* str1 = "0x0000001000";
 	size_t* a = get_oct_size(str1);
 	kprintf("size1 %d \n",sizeof(posix_header_t));
@@ -328,4 +357,21 @@ vma_struct* select_vma_by_type(mm_struct* mm, uint64_t type){
 		}
 	}
 	return NULL;
+}
+
+
+
+//cr3 set to new pml4
+void user_space_allocate(uint64_t viraddr){
+	//return the physical addr of the allocated page
+	uint64_t phyaddr = allocate_page();
+	//get the physical addr of current cr3
+    uint64_t cur_pml4 = get_CR3();
+    //
+
+    uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,viraddr);
+
+    //cur_pml4 = (pml4_t)(VIRT_ST|(uint64_t)cur_pml4);
+    
+    user_process_mapping(viraddr,phyaddr,pml4_addr,0);
 }

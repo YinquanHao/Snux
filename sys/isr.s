@@ -44,6 +44,8 @@
 
 .extern handle_keyboard
 
+.extern page_fault_handler
+
 .global irq0
 
 irq0:
@@ -79,5 +81,17 @@ isr1:
 
 isr2:
 	iretq
+
+.global isr14
+isr14:
+    cli
+    pushq $14
+    PUSHALL
+    movq %rsp, %rdi
+    call  page_fault_handler
+    POPALL
+    add $0x10, %rsp
+    sti
+    iretq
 
 
