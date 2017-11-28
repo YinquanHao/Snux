@@ -26,6 +26,10 @@ void init_virt_phy_mapping() {
     set_CR3((unsigned long) PML4);
 
     test_self_ref();
+
+    uint64_t res = get_physical_addr(VIRT_ST|0x4003E0);
+
+    kprintf("test %x", res);
 }
 
 
@@ -199,6 +203,11 @@ void user_process_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_PML4
         pdpt_tab=(pdpt_t)(entry_address);
     }else{
         pdpt_tab=(pdpt_t)set_pdpt(PML4,pml4_index,USER_MALLOC);
+        pdpt_tab = (pdpt_t)get_tb_virt_addr(PDPT_LEVEL,vir_addr);
+        int i=0;
+        for(i;i<512;i++){
+            pdpt_tab->PDPTE[i]=0;
+        }    
     }
     pdpt_tab = (pdpt_t)get_tb_virt_addr(PDPT_LEVEL,vir_addr);
     uint64_t pdpt_entry=pdpt_tab->PDPTE[page_dir_pt_index];
@@ -207,6 +216,11 @@ void user_process_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_PML4
         pdt_tab=(pdt_t)(entry_address);
     }else{
         pdt_tab=(pdt_t)set_pdt(pdpt_tab,page_dir_pt_index,USER_MALLOC);
+        pdt_tab = (pdt_t)get_tb_virt_addr(PDT_LEVEL,vir_addr);
+        int i=0;
+        for(i;i<512;i++){
+            pdt_tab->PDTE[i]=0;
+        }    
     }
     pdt_tab = (pdt_t)get_tb_virt_addr(PDT_LEVEL,vir_addr);
     uint64_t pdt_entry=pdt_tab->PDTE[page_dir_index];
@@ -215,6 +229,11 @@ void user_process_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_PML4
         pt_tab=(pt_t)(entry_address);
     }else{
         pt_tab=(pt_t)set_pt(pdt_tab,page_dir_index,USER_MALLOC);
+        pt_tab = get_tb_virt_addr(PT_LEVEL,vir_addr);
+        int i=0;
+        for(i;i<512;i++){
+            pt_tab->PTE[i]=0;
+        }     
     }
     pt_tab = get_tb_virt_addr(PT_LEVEL,vir_addr);
     uint64_t page_entry=phy_addr;
@@ -330,7 +349,7 @@ void user_process_vir_phy_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t u
         entry_address=pml4_entry&PERM_MASK;    //mask the permission bits of the address  
         pdpt_tab=(pdpt_t)(entry_address);
     }else{
-        pdpt_tab=(pdpt_t)set_pdpt(PML4,pml4_index,USER_MALLOC);
+        pdpt_tab=(pdpt_t)set_pdpt(PML4,pml4_index,USER_MALLOC);    
     }
     unsigned long pdpt_entry=pdpt_tab->PDPTE[page_dir_pt_index];
     if(pdpt_entry & PT_P ){ 
@@ -349,7 +368,7 @@ void user_process_vir_phy_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t u
     unsigned long page_entry=phy_addr;
     page_entry=page_entry|PT_P|PT_U|PT_W; //set the page table flags
     pt_tab->PTE[page_tb_index]=page_entry;
-   /// kprintf("pml4_index: %d page_tb_index: %d ",pml4_index, page_tb_index);
+    kprintf("pml4_index: %d page_tb_index: %d ",pml4_index, page_tb_index);
 }
 
 

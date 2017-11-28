@@ -50,6 +50,14 @@ struct vma_struct {
 	struct file *file;           // reference to file descriptors for file opened for writing
 };
 
+struct file{
+    uint64_t   start;       /* start address of region */
+    uint64_t   pgoff;       /* offset in file or NULL */
+    uint64_t   size;        /* region initialised to here */
+    uint64_t   bss_size;
+};
+
+
 
 struct regs{
 	uint64_t rsp,rbp,rdi,rsi,rdx,rcx,rbx,rax;

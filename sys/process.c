@@ -152,6 +152,7 @@ task_struct* create_user_process(char* filename){
     //points to the kstack to the highest addr of kernel stack
     task->kstack=((uint64_t)stack +0x1000-16);
     //load the elf
+    kprintf("size of %d",sizeof(posix_header_t));
     load_elf(task,(void*)(hd+1));
     //set the cr3 back to previous
     set_CR3((pml4_t)prev_cr3);

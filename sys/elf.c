@@ -65,7 +65,13 @@ int load_elf(task_struct* task, void* exe){
 	task->mm->mmap = NULL;
 	//assign the task's rip
 	task->rip = ehdr->e_entry;
-/*
+
+	uint64_t res = get_physical_addr(VIRT_ST|0x4003E0);
+
+    kprintf("test %x", res);
+
+	kprintf("phdr %x",phdr->p_type);
+
 	int i=0;
 
 	for(i=0;i<ehdr->e_phnum; i++) {
@@ -74,8 +80,9 @@ int load_elf(task_struct* task, void* exe){
 
 			//vma_struct *vma = (vma_struct *)kmalloc();
 
-			user_space_allocate(VIRT_ST|0x5002000);
-			vma_struct *vma = (vma_struct*)(VIRT_ST|0x5002000);
+			user_space_allocate(task->vir_top);
+			vma_struct *vma = (vma_struct*)(task->vir_top);
+			task->vir_top+=PAGE_SIZE;
 
 			if(mm->mmap == NULL) {
 				mm->mmap = vma;
@@ -83,7 +90,7 @@ int load_elf(task_struct* task, void* exe){
 				mm->current->next = vma;	
 			}
 			vma->mm = mm;
-			mm->mmap->current = vma;
+			mm->current = vma;
 
 			vma->start = phdr->p_vaddr;
 			vma->end = phdr->p_vaddr + phdr->p_memsz;
@@ -95,9 +102,10 @@ int load_elf(task_struct* task, void* exe){
 			while(pg_num){
 				//allocate pg
 				//cp start to pg
-				user_space_allocate(VIRT_ST|0x5003000);
+				user_space_allocate(task->vir_top);
 				//vma_struct *vma = (vma_struct*)(VIRT_ST|0x5002000);
-				memcpy((void*)VIRT_ST,st,PAGE_SIZE);
+				memcpy((void*)task->vir_top,st,PAGE_SIZE);
+				task->vir_top+=PAGE_SIZE;
 				length--;
 				st+=PAGE_SIZE;
 			}
@@ -110,12 +118,21 @@ int load_elf(task_struct* task, void* exe){
 
 				task->mm->start_code = phdr->p_vaddr;
 				task->mm->end_code = phdr->p_vaddr + phdr->p_memsz;
-				vma->file = (struct file *)kmalloc();  
+				user_space_allocate(task->vir_top); 
+				vma->file = (struct file *)task->vir_top;
+				task->vir_top+=PAGE_SIZE;
 				vma->file->start = (uint64_t)ehdr;
 				vma->file->pgoff = phdr->p_offset;
-				vma->file->size = phdr->p_filesz;	
-				
-				memcpy((void*)vma->start, (void*)((uint64_t)ehdr + phdr->p_offset), phdr->p_filesz);
+				vma->file->size = phdr->p_filesz;
+
+				uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,0);
+    			//cur_pml4 = (pml4_t)(VIRT_ST|(uint64_t)cur_pml4);
+    
+    			user_process_mapping(task->vir_top,vma->start,pml4_addr,0);
+
+    			//TODO yinquanhao check the correctness
+				memcpy((void*)task->vir_top, (void*)((uint64_t)ehdr + phdr->p_offset), phdr->p_filesz);
+				task->vir_top+=PAGE_SIZE;
 				if(phdr->p_flags == (PERM_R | PERM_X)) {
 					vma->file->bss_size = 0;
 					vma->type = TEXT;
@@ -124,10 +141,13 @@ int load_elf(task_struct* task, void* exe){
 					vma->type = DATA; 
 				}	
 			}
+			
 		}
 		phdr++;
 	}
 
+
+/*
 	// Allocate HEAP  and map to HEAP_ST 
 	vma_struct *vma_heap = (vma_struct *)kmalloc();
 
@@ -166,7 +186,7 @@ int load_elf(task_struct* task, void* exe){
 	task->rsp = (uint64_t)((uint64_t)stack + 4096 - 16);
 */
 	//mm_struct *mm = task->mm;
-	
+
 	user_space_allocate(USER_STACK_TOP-PAGE_SIZE);
 	vma_struct *vma_stack = (vma_struct*)(USER_STACK_TOP-PAGE_SIZE);
 	if(mm->mmap == NULL)
@@ -198,12 +218,7 @@ int load_elf(task_struct* task, void* exe){
 	vma_heap->type = HEAP;
 	vma_heap->file = NULL;
 	vma_heap->next = NULL;
-	//task->rsp = (uint64_t)((uint64_t)stack - 16);
-
-
 	return 0;
-
-	
 }
 
 
