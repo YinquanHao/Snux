@@ -202,7 +202,7 @@ void user_process_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_PML4
         entry_address=pml4_entry&PERM_MASK;    //mask the permission bits of the address  
         pdpt_tab=(pdpt_t)(entry_address);
     }else{
-        pdpt_tab=(pdpt_t)set_pdpt(PML4,pml4_index,USER_MALLOC);
+        pdpt_tab=(pdpt_t)set_pdpt(user_PML4,pml4_index,USER_MALLOC);
         pdpt_tab = (pdpt_t)get_tb_virt_addr(PDPT_LEVEL,vir_addr);
         int i=0;
         for(i;i<512;i++){

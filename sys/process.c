@@ -368,11 +368,10 @@ void user_space_allocate(uint64_t viraddr){
 	uint64_t phyaddr = allocate_page();
 	//get the physical addr of current cr3
     uint64_t cur_pml4 = get_CR3();
-    //
-
+    
     uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,viraddr);
-
-    //cur_pml4 = (pml4_t)(VIRT_ST|(uint64_t)cur_pml4);
     
     user_process_mapping(viraddr,phyaddr,pml4_addr,0);
+    //mem set the space we just newly created
+    memset(viraddr,0,PAGE_SIZE);
 }
