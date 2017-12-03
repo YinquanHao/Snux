@@ -57,7 +57,7 @@ else{
 	PIC_sendEOI(33);
 	if(input<0x81){
 
-			kprintkb(state,key);
+			terminal_input(state,key);
 		
 		}
 	}

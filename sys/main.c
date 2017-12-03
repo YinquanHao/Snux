@@ -13,7 +13,7 @@
 #include <sys/virtualmem.h>
 #include <sys/process.h>
 #include <sys/terminal.h>
-
+#include <sys/syscall.h>
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
@@ -103,6 +103,8 @@ kprintf("memory_length %x main", memory_length);
 init_kernalmem(physfree);
 
 init_virt_phy_mapping(memory_length);
+set_msr();
+terminal_init();
 
 init_pid();
 

@@ -4,5 +4,6 @@
 void kprintf(const char *fmt, ...);
 void kprintt(const char *fmt,...);
 void kprintkb(char state,char key);
-
+void scroll();
+void move_line(int dest,int source);
 #endif

@@ -23,6 +23,6 @@ void syscall_handler();
 void syscall_compatible_mode();
 void syscall_entry();
 void getpid();
-uint64_t write();
+uint64_t sys_write();
 
 #endif

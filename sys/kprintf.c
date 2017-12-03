@@ -114,17 +114,23 @@ void kprintf(const char *fmt, ...){
 			c++;
 			x++;
 		}
-		if(x==80&&y==19){
+/*		if(x==80&&y==19){
 			x=0;
 			y=0;
 		}
 		if(y==18){
 			x++;
 			y=0;
-		}
+		}*/
 		if(x==80){
 			x=0;
 			y++;
+			if(y>=20){
+				scroll();
+				x=0;
+				y=19;
+				break;
+			}
 		}
 		//TODO(@yinquanhao) add scroll functionality.
 
@@ -254,6 +260,22 @@ void kprintkb(char state,char key){
 	*(textptr-2)=state|0xF1<<8;
 
 
+}
+
+void scroll(){
+	int line_num=y;
+	for(int i=1;i<line_num;i++){
+		move_line(i,i+1);
+	}
+	uint64_t loc=(unsigned short *)(VGA_ADDR)+(y-1)*VGA_WIDTH;
+	memset((void *)loc,0,160);
+
+}
+
+void move_line(int dest,int source){
+	uint64_t p1=(unsigned short *)(VGA_ADDR)+(dest-1)*VGA_WIDTH;
+	uint64_t p2=(unsigned short *)(VGA_ADDR)+(source-1)*VGA_WIDTH;
+	memcpy((void *)p1,(void *)p2,160);
 }
 
 

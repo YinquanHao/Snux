@@ -86,7 +86,7 @@ void syscall_handler(struct syscall_regs* regs){
 		case SYS_chdir:
 			break;
 		case SYS_write:
-			write(regs);
+			sys_write(regs);
 			break;
 		case SYS_read:
 			break;
@@ -212,7 +212,7 @@ void getpid(struct syscall_regs* regs){
 	return;
 }
 
-uint64_t write(struct syscall_regs* regs){
+uint64_t sys_write(struct syscall_regs* regs){
 	terminal_write(regs->rdi,regs->rsi,regs->rdx);
 }
 

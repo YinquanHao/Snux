@@ -27,16 +27,6 @@ void terminal_init(){
 	//kprintf("aa");	
 	tx=0;
 	ty=20;
-	char a[100]={0};
-	tbuffer[0]='a';
-	tbuffer[1]='b';
-		tbuffer[2]='b';
-	tbuffer[3]='b';
-	tbuffer[4]='b';
-	tbuffer[5]='b';
-	tbuffer[6]='b';
-	terminal_read(a, 3);
-	kprintf("%s",a);
 	//init_t->tbuffer[1024]={0};
 }
 
@@ -73,24 +63,26 @@ void terminal_input(char input_state,char input_char){
 	//while(1);
 	unsigned char *c = (uint8_t *)buf;
 	while (*c!='\0') {
-		if(*c=='\n'){			
+		if(*c=='\n'){
+			//kprintf("%c",buf[0]);			
 			textptr=textptr-tx+VGA_WIDTH;
+			//t_scroll();
 			c++;
 			ty++;
 			tx=0;
 			//excute
-			cursor=0;
-			memset(&tbuffer[0],0,100);
+			//cursor=0;
+			//memset(&tbuffer[0],0,100);
 			//break;			
 		}
-		else if(*c=='1'){
+/*		else if(*c=='1'){
 			kprintf("xxxxx");
 			*textptr++ = *c|0xF1<<8;
 			c++;
 			tx++;
 			break;
 			//break;
-		}
+		}*/
 /*		else if(*c=='2'){
 			char *a="111";
 			terminal_read(a,10);
@@ -98,12 +90,7 @@ void terminal_input(char input_state,char input_char){
 			break;
 		}*/
 		else if(*c=='\b'){//backspace
-			tbuffer[cursor]=0;
-			cursor--;
-			tbuffer[cursor]=0;
-			//cursor--;
-			tx--;
-			tx--;
+			backspace(textptr);
 			break;
 		}
 		else if(*c=='\r'){
@@ -122,7 +109,7 @@ void terminal_input(char input_state,char input_char){
 		}
 		if(ty>22){
 			//kprintf("scroll");
-			//t_scroll();
+			t_scroll();
 			ty--;
 		}
 	}
@@ -134,8 +121,22 @@ void t_scroll(){
 	memset((void *)loc,0,160);
 	int line_num=ty;
 	for(int i=21;i<line_num;i++){
-		//move_line(i,i+1);
+		move_line(i,i+1);
 	}
 	loc=(unsigned short *)(VGA_ADDR)+(ty-1)*VGA_WIDTH;
 	memset((void *)loc,0,160);
+}
+
+void backspace(unsigned short  *text){
+			if(tx==0&&ty==20){
+				return;
+			}
+			tbuffer[cursor]=0;
+			cursor--;
+			tbuffer[cursor]=0;
+			cursor--;
+			*text--;
+			*text=0;
+			//cursor--;
+			tx--;
 }
