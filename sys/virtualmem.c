@@ -17,13 +17,15 @@ void init_kernalmem(unsigned long physfree){
 
 
 
-void init_virt_phy_mapping() {
-    map_kernel(0x20C000); 
+void init_virt_phy_mapping(unsigned long mem_length) {
+    map_kernel(mem_length); 
     vir_phy_mapping(VIRT_ST+0xB8000,0xB8000);
     mapping_test();
 
     //anything after this point should use virtual addr
+ 
     set_CR3((unsigned long) PML4);
+
 
     test_self_ref();
 
@@ -139,7 +141,7 @@ void map_kernel(unsigned long map_size){
     unsigned long phy_st = 0x200000;
    // unsigned long phy_st = 0x20C000;60DB000
     //int k=0;
-    while(phy_st<0x60DB000){
+    while(phy_st<map_size){
         vir_phy_mapping(vir_st,phy_st);
         vir_st += PAGE_SIZE; //*20000;
         phy_st += PAGE_SIZE; //*20000;
@@ -210,7 +212,9 @@ void user_process_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_PML4
         }    
     }
     pdpt_tab = (pdpt_t)get_tb_virt_addr(PDPT_LEVEL,vir_addr);
+    kprintf("pdpt_tab addr %x",pdpt_tab);
     uint64_t pdpt_entry=pdpt_tab->PDPTE[page_dir_pt_index];
+    kprintf("pdpt_entry addr %x",pdpt_entry);
     if(pdpt_entry & PT_P ){ 
         entry_address=(pdpt_entry)&PERM_MASK;      
         pdt_tab=(pdt_t)(entry_address);
@@ -427,11 +431,13 @@ unsigned long get_vir_from_phy(unsigned long phys_addr){
 
 void* set_pdpt(pml4_t pml4, unsigned long pml4_index, int is_kernal) {
 
-    pdpt_t pdpt;
+        pdpt_t pdpt;
     if(is_kernal==KERNAL_TB){
         pdpt = (pdpt_t) kmalloc(KERNAL_TB,1);
-    }else{
+    }else if(is_kernal==USER_MEM){
         pdpt = (pdpt_t) kmalloc(USER_MEM,1);
+    }else{
+        pdpt = (pdpt_t) kmalloc(KERNAL_MEM,1);
     }
 
     //kprintf("pdpt table address %x \n", pdpt);
@@ -442,7 +448,7 @@ void* set_pdpt(pml4_t pml4, unsigned long pml4_index, int is_kernal) {
     }
 
     //for test ring3
-    pdpt_entry |= PT_U;
+    //pdpt_entry |= PT_U;
 
     //set writtable and present bits
     pdpt_entry |= (PT_P | PT_W);
@@ -458,8 +464,11 @@ void* set_pdt(pdpt_t pdpt, unsigned long pdpt_index, int is_kernal) {
     pdt_t pdt;
     if(is_kernal==KERNAL_TB){
         pdt = (pdt_t) kmalloc(KERNAL_TB,1);
-    }else{
+    }else if(is_kernal==USER_MEM){
         pdt = (pdt_t) kmalloc(USER_MEM,1);
+    }else{
+             pdt = (pdt_t) kmalloc(KERNAL_MEM,1);
+   
     }
 
     unsigned long pdt_entry = (unsigned long) pdt;
@@ -467,8 +476,12 @@ void* set_pdt(pdpt_t pdpt, unsigned long pdpt_index, int is_kernal) {
     if (is_kernal == USER_MALLOC) {
         pdt_entry |= PT_U;
     }
+
+
     //for test ring3
-    pdt_entry |= PT_U;
+    //pdt_entry |= PT_U;
+
+    
     //set writtable and present bits
     pdt_entry |= (PT_P | PT_W);
     //pdpt_entry is physical address
@@ -483,8 +496,10 @@ void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
     pt_t pt;
     if(is_kernal==KERNAL_TB){
         pt = (pt_t) kmalloc(KERNAL_TB,1);
-    }else{
+    }else if(is_kernal==USER_MEM){
         pt = (pt_t) kmalloc(USER_MEM,1);
+    }else{
+              pt = (pt_t) kmalloc(KERNAL_MEM,1);
     }
     //kprintf("pt table address %x \n", pt);
     unsigned long pt_entry = (unsigned long) pt;
@@ -492,8 +507,12 @@ void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
     if (is_kernal == USER_MALLOC) {
         pt_entry |= PT_U;
     }
+
+
     //for test ring3
-    pt_entry |= PT_U;
+    //pt_entry |= PT_U;
+
+
     //set writtable and present bits
     pt_entry |= (PT_P | PT_W);
     /*pdpt_entry is physical address*/
@@ -504,7 +523,7 @@ void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
 
 void set_CR3(pml4_t new_cr3){
     unsigned long base_pgdir_addr = (unsigned long)new_cr3;
-    __asm volatile("mov %0, %%cr3":: "b"(base_pgdir_addr));
+    __asm volatile("mov %0, %%cr3":: "r"(base_pgdir_addr));
 
 }
 
@@ -516,19 +535,32 @@ uint64_t get_CR3(){
 
 void *set_user_addr_space(){
     uint64_t new_PML4_phy = allocate_page();
+
+
+    //vir_phy_mapping()
+
     //create a new space for new PML4 table in user_process(virtual addr)
     pml4_t new_PML4 = (pml4_t)get_vir_from_phy(new_PML4_phy);
+    //vir_phy_mapping(new_PML4,new_PML4_phy);
     //get the current PML4 table (virtual addr)
     pml4_t cur_PML4 = (pml4_t)get_vir_from_phy(get_CR3());
 
-    new_PML4->PML4E[510] = new_PML4_phy|PT_P;
+    user_process_mapping(new_PML4,new_PML4_phy,cur_PML4,0);
+
+    //PML4->PML4E[TABLE_SIZE - 2] = ((uint64_t)PML4) | PT_P;
+
+    for(int i=0;i<512;i++){
+        new_PML4->PML4E[i]=0;
+    }
+
+    new_PML4->PML4E[510] = ((uint64_t)new_PML4_phy) | (PT_P|PT_U|PT_W) ;
     //TODO YinquanHao  map the kernel page table for the process??? 
     //vir_phy_mapping(new_PML4,new_PML4_phy);
     //user_process_vir_phy_mapping()
 
     int i=0;
    // for(i=0;i<512;i++){
-        new_PML4->PML4E[511] = cur_PML4->PML4E[511];
+    new_PML4->PML4E[511] = cur_PML4->PML4E[511];
     //}
     //new_PML4->PML4E = cur_PML4->PML4E;
     return (void*)new_PML4;

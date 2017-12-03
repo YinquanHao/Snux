@@ -65,7 +65,7 @@ void* set_pdt(pdpt_t pdpt, unsigned long pdpt_index, int is_kernal);
 void* set_pdpt(pml4_t pml4, unsigned long pml4_index, int is_kernal);
 unsigned long get_vir_from_phy(unsigned long phys_addr);
 void map_kernel(unsigned long map_size);
-void init_virt_phy_mapping();
+void init_virt_phy_mapping(unsigned long mem_length);
 void mapping_test();
 void set_CR3(pml4_t new_cr3);
 uint64_t get_CR3();

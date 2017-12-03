@@ -9,8 +9,9 @@
 
 #include <sys/io.h>
 
+
 static inline void pic_remap(){
-    //__asm__ __volatile__("cli");
+    __asm__ __volatile__("cli");
  	outb(PIC1, 0x11);
     outb(PIC2, 0x11);
     outb(PIC1_DATA, PIC1);
@@ -21,7 +22,13 @@ static inline void pic_remap(){
     outb(PIC2_DATA, 0x01);
     outb(PIC1_DATA, 0x0);
     outb(PIC2_DATA, 0x0);
+    __asm__ __volatile__("sti");
+
+
+
 }
+
+
 
 static inline void PIC_sendEOI(unsigned char irq){
 	if(irq >= 8){

@@ -35,6 +35,7 @@ extern void idt_set_gate(uint8_t, uint64_t, uint16_t, uint8_t);
 extern void isr0();
 extern void isr1();
 extern void isr2();
+extern void isr14();
 /*extern void isr3();
 extern void isr4();
 extern void isr5();

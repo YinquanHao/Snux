@@ -49,7 +49,7 @@
 .global irq0
 
 irq0:
-    	cli
+    cli
 	PUSHALL
 	call timer_install
 	POPALL
@@ -59,6 +59,7 @@ irq0:
 
 
 .global irq1
+
 irq1:
 	cli
 	PUSHALL
@@ -70,7 +71,12 @@ irq1:
 .global isr0
 
 isr0:
-	iretq
+    cli
+    PUSHALL
+    call page_fault_handler
+    POPALL
+    sti
+    iretq
 
 .global isr1
 
@@ -83,6 +89,7 @@ isr2:
 	iretq
 
 .global isr14
+
 isr14:
     cli
     pushq $14
@@ -93,5 +100,6 @@ isr14:
     add $0x10, %rsp
     sti
     iretq
+
 
 

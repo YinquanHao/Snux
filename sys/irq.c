@@ -17,6 +17,7 @@
 }*/
 
 
+
 void irq_install(){
 	pic_remap();
 	idt_set_gate(32, (uint64_t)irq0, 0x08, 0x8E);

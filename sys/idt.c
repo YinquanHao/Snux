@@ -31,21 +31,28 @@ static struct idt_ptr idtr={
 void _x86_64_asm_lidt(struct idt_ptr *idtr);
 //void idt_load();
 
+
+//check
 void idt_load(){
 
 	_x86_64_asm_lidt(&idtr);
 	//kprintf("loadddddddddddddddddddddddd");
 }
 
+
+//check
 void idt_set_gate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags){
     idt[num].offset_1 = (base & 0xFFFF);
     idt[num].offset_2 = (base >> 16) & 0xFFFF;
     idt[num].offset_3 = (base >> 32) & 0xFFFFFFFF;
     idt[num].selector = sel;
     idt[num].ist = 0;
+    //TODO: do we need to make it OR\0x60
     idt[num].type_attr = flags;
     idt[num].zero=0;
 }
+
+
 
 void idt_clear(){
 	for(int i=0;i<256;i++){
@@ -57,15 +64,19 @@ void idt_clear(){
     	idt[i].type_attr = 0;
     	idt[i].zero=0;
 	}
-
+    pic_remap();
+//pci remap???
 }
 
 void idt_install(){
 //	idt_clear();
     
-idt_set_gate(0,(uint64_t)isr0,0x08,0x8E);
+idt_set_gate(0,(uint64_t)isr0,0x08,0x8E);//8E to EE?
 idt_set_gate(1, (uint64_t)isr1, 0x08, 0x8E);
-idt_set_gate(2, (uint64_t)isr1, 0x08, 0x8E);
+idt_set_gate(14, (uint64_t)isr14, 0x08, 0x8E);
+
+//kprintf("idt_install??????????????????????????????????????????????????????????????????????????????");
+//idt_set_gate(2, (uint64_t)isr1, 0x08, 0x8E);
 /*idt_set_gate(3, (uint64_t)isr1, 0x08, 0x8E);
 idt_set_gate(4, (uint64_t)isr1, 0x08, 0x8E);
 idt_set_gate(5, (uint64_t)isr1, 0x08, 0x8E);

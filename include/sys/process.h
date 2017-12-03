@@ -6,11 +6,11 @@
 #define DATA_VMA 1
 #define HEAP_VMA 2
 #define STACK_VMA 3
-#define USER_STACK_TOP	 0xFFFFFFFFFFFFE000UL
-#define USER_STACK_LIMIT 0xFFFFFFFFFFF5EFFFUL //the lowest address of user stack 160pgs
-#define HEAP_START		 0xFFFFFFFF80000000UL
-#define HEAP_LIMIT       0xFFFFFFFF800A0000UL //the highest address of heap can reach 160pgs
-#define VMA_VA_ST        0xFFFFFFFF800A1000UL
+#define USER_STACK_TOP	 0x00000FFF7FFFE000UL
+#define USER_STACK_LIMIT 0x00000FFF7FF5EFFFUL //the lowest address of user stack 160pgs
+#define HEAP_START		 0x00000FFF80000000UL
+#define HEAP_LIMIT       0x00000FFF800A0000UL //the highest address of heap can reach 160pgs
+#define VMA_VA_ST        0x00000FFF800A1000UL
 //for tesing 
 #define heap_end  0x8000
 #define stack_end 0x8000
@@ -58,6 +58,10 @@ struct file{
 };
 
 
+struct syscall_regs{
+	uint64_t rbx,rbp,r15,r14,r13,r12,r10,r9,r8,rcx,rdx,rsi,rdi,rax;
+	uint64_t rpointer,flags;
+};
 
 struct regs{
 	uint64_t rsp,rbp,rdi,rsi,rdx,rcx,rbx,rax;
@@ -92,4 +96,5 @@ void set_user_task_struct_mm(task_struct* task);
 vma_struct* select_vma_by_type();
 task_struct* get_current_task();
 void user_space_allocate(uint64_t viraddr);
+task_struct* get_current_task();
 #endif

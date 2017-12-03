@@ -12,6 +12,7 @@
 #include <sys/physmem.h>
 #include <sys/virtualmem.h>
 #include <sys/process.h>
+#include <sys/terminal.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -53,7 +54,7 @@ unsigned long page_index=smap_base_max>>12;
 //kprintf("page_inde x%d \n",page_index);
 
 //memory_length = 24284 pg
-memory_length=(memory_length>>12)-PG_DESC_SIZE;
+//memory_length=(memory_length>>12)-PG_DESC_SIZE;
 //kprintf("memory length %d \n",memory_length);
 
 //physical_page_start ,,m  & physfree =  0x20c000
@@ -61,7 +62,7 @@ physical_page_start= (page_t*)(0xffffffff80000000UL + physfree);
 //kprintf("physical_page_start %x \n",physical_page_start);
 
 //page_total_number = 24284 pg
-unsigned long page_total_number=memory_length;
+unsigned long page_total_number=(memory_length>>12)-PG_DESC_SIZE;
 
 //used_page = 524 pgs, where is number of pages before physfree
 unsigned long used_page=(unsigned long)physfree>>12;
@@ -79,8 +80,7 @@ init_phy(used_page,0,page_total_number);
 
 
 //kprintf("page_total_number %d",page_total_number);
-
-
+//terminal_init();
 //int pageNum=get_free_pg(free_pg_head);
 
 
@@ -98,30 +98,52 @@ kprintf("physbase %p\n", (uint64_t)physbase);
 kprintf("physfree %p\n", (uint64_t)physfree);
 
 
-
+kprintf("memory_length %x main", memory_length);
 //physfree =  0x20c000
 init_kernalmem(physfree);
 
-
-init_virt_phy_mapping();
-
-//511 510 1 12
+init_virt_phy_mapping(memory_length);
 
 init_pid();
 
 
 task_struct* idle = create_init_kthread();
+uint64_t sr=0x0000FF0000000000;
+uint64_t msk=0xFFFF007FFFFFFFFF;
+uint64_t vir=0xFFFFFF8000001000;
+int level=1;
+int i = 0;
+
+    for (i = level; i > 0; i--) {
+        vir >>= 9;
+        vir &= msk;
+        vir |= sr;
+        kprintf("%x  ",vir);
+        // dprintf ("i is %d\n", i);
+    }
+
+    vir |= 0xFFFF000000000000;
+    vir &= 0xFFFFFFFFFFFFFFF8;
+
+kprintf("%x",vir);
+/*
+uint64_t a= 0xFFFFFFFF80000000;
+uint64_t b=(((a) >> 39) & 0x1FF);
+uint64_t c=(((a) >> 12) & 0x1FF);
+
+kprintf("   %x, %x",b,c);*/
 
 
 
+
+
+//  kprintf("a");
 
 /*
 task_struct* idle = create_kthread(func_a);
 task_struct* t2 = create_kthread(print_kthread);
 schedule();
 */
-
-while(1);
 
 //schedule();
 //task_struct* idle2 = create_kthread(print_kthread);
@@ -162,15 +184,19 @@ __asm__("sti");
 
 init_gdt();
 idt_clear();
-//pic_remap();
 idt_load();
+
+
 idt_install();
 irq_install();
+//idt_install();
+
+
 //isrs_install();
-//timer_phase();
+timer_phase();
 
 //checkAll();
-//kprintf("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+//kprintf("XXXXXXXXXXXXXXXXXXXXXXXXX");
 
 
 //__asm__ __volatile__ ("int $32");
