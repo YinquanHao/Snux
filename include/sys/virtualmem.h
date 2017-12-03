@@ -77,6 +77,7 @@ uint64_t allocate_vir_page(uint64_t vaddr,uint64_t flags);
 void *memcpy(void *dest,const void *src,uint64_t n);
 void test_self_ref();
 
-uint64_t get_tb_virtual_addr(uint64_t level, uint64_t entry_belong_to);
+//uint64_t get_tb_virtual_addr(uint64_t level, uint64_t entry_belong_to);
 uint64_t get_tb_virt_addr(uint64_t level, uint64_t virt_addr);
+uint64_t get_physical_addr_user(uint64_t virt_addr);
 #endif

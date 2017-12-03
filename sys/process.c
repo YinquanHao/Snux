@@ -309,6 +309,7 @@ void switch_to_ring3(task_struct* task){
 	kernel_rsp = current->kstack;
 	uint64_t uf=(uint64_t)&user_func;
 	uint64_t rsp_cp;
+	current = task;
 	//kprintf("  %x,%x,%x  ",task->rsp,task->rip,task->cr3);
 	//while(1);
 	set_tss_rsp(task->kstack);

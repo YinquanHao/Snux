@@ -9,6 +9,8 @@ int main(){
 	write(1,&buf,5);
 	a=a+2;
 	printf("%d",a);
+	char* test = 0x00000FFF80001000;
+	printf("%s",test);
 	while(1);
 	return a;
 }

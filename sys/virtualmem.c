@@ -62,6 +62,44 @@ void test_self_ref() {
 
 }
 
+uint64_t get_physical_addr_user(uint64_t vaddr){
+    
+    uint64_t pml4_index = (((vaddr) >> 39) & 0x1FF);
+    uint64_t page_dir_pt_index  = (((vaddr) >> 30) & 0x1FF);
+    uint64_t page_dir_index  = (((vaddr) >> 21) & 0x1FF);
+    uint64_t page_tb_index =  (((vaddr) >> 12) & 0x1FF);
+    uint64_t entry_address;
+
+    pml4_t pml4_tab=(pml4_t)get_tb_virt_addr(PML4_LEVEL,vaddr);
+    uint64_t pml4_entry=pml4_tab->PML4E[pml4_index];
+    if(!(pml4_entry & PT_P)){
+        return 0;
+    }
+
+    entry_address=pml4_entry&PERM_MASK; 
+
+    pdpt_t pdpt_tab=(pdpt_t)get_tb_virt_addr(PDPT_LEVEL,vaddr);
+    uint64_t pdpt_entry=pdpt_tab->PDPTE[page_dir_pt_index];
+    if(!(pdpt_entry & PT_P)){
+        return 0;
+    }
+
+    entry_address=pdpt_entry&PERM_MASK;
+
+    pdt_t pdt_tab=(pdt_t)get_tb_virt_addr(PDT_LEVEL,vaddr);
+    uint64_t pdt_entry=pdt_tab->PDTE[page_dir_index];
+    if(!(pdt_entry & PT_P)){
+        return 0;
+    }
+
+    entry_address=pdt_entry&PERM_MASK;
+
+    pt_t pt_tab=(pt_t)get_tb_virt_addr(PT_LEVEL,vaddr);
+    uint64_t pt_entry=pt_tab->PTE[page_tb_index];
+    return pt_entry;
+}
+
+/*
 uint64_t get_tb_virtual_addr(uint64_t level, uint64_t entry_belong_to){
     uint64_t vir_addr_res;
 
@@ -86,7 +124,7 @@ uint64_t get_tb_virtual_addr(uint64_t level, uint64_t entry_belong_to){
     return vir_addr_res;
 
 }
-
+*/
 uint64_t get_tb_virt_addr(uint64_t level, uint64_t virt_addr){
     uint64_t vir_addr_res;
     uint64_t pml4_index = (((virt_addr) >> 39) & 0x1FF);
@@ -290,7 +328,7 @@ void user_process_mapping_v2(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_P
     pt_tab->PTE[page_tb_index]=page_entry;
 }
 
-
+/*
 uint64_t allocate_vir_page(uint64_t vaddr,uint64_t flags){ 
     uint64_t phy_page=allocate_page();   //allocate physcial page
     pml4_t cur_pml4=(pml4_t)get_CR3();
@@ -307,7 +345,7 @@ uint64_t allocate_vir_page(uint64_t vaddr,uint64_t flags){
     //kprintf("%x",phy_page);
     return 0;
 }
-
+*/
 
 
 /*returned a physical address for allocated one page size*/
