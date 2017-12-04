@@ -8,6 +8,7 @@
 #define SYS_getcwd     79
 #define SYS_chdir      80
 #define SYS_write       1
+#define SYS_brk        12
 #define SYS_read	0
 #define SYS_open        2
 #define SYS_close       3
@@ -19,10 +20,12 @@
 #define SYS_wait4      61
 
 void set_msr();
-void syscall_handler();
+uint64_t syscall_handler();
 void syscall_compatible_mode();
 void syscall_entry();
 void getpid();
 uint64_t sys_write();
+uint64_t sys_brk();
+
 
 #endif

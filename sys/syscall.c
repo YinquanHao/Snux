@@ -2,6 +2,7 @@
 #include <sys/defs.h>
 #include <sys/process.h>
 #include <sys/terminal.h>
+#include <sys/virtualmem.h>
 extern task_struct* current;
 
 void set_msr(){
@@ -67,7 +68,7 @@ void set_msr(){
 }
 
 
-void syscall_handler(struct syscall_regs* regs){
+uint64_t syscall_handler(struct syscall_regs* regs){
 	
 //	__asm__ __volatile__("xchg %bx, %bx");
 //kprintf("%x, %x",regs->rpointer,regs->flags);
@@ -105,6 +106,9 @@ void syscall_handler(struct syscall_regs* regs){
 //		case SYS_mumap:
 //			break;
 		case SYS_wait4:
+			break;
+		case SYS_brk:
+			return sys_brk(regs);
 			break;
 	}
 	//__asm__ __volatile__("xchg %bx, %bx");
@@ -219,4 +223,23 @@ uint64_t sys_write(struct syscall_regs* regs){
 
 void syscall_compatible_mode(){
 	return;
+}
+
+//the sys_brk syscall to increment the brk
+uint64_t sys_brk(struct syscall_regs* regs){
+	int pages = regs->rdi;
+	//get current task's heap 
+	uint64_t addr = current->mm->brk;
+    //struct vm_struct *vma_ptr;
+    struct mm_struct *mm_ptr = current->mm;
+    uint64_t size;
+    size = pages*PAGE_SIZE;
+    mm_ptr->brk +=size;
+    mm_ptr->end_data +=size;
+    mm_ptr->total_vm   +=size;
+    kprintf("addr %x", addr);
+    regs->rax = addr;
+    //while(1);
+    //TODO yinquanhao do we need to actually allocate a space?
+    return addr;
 }

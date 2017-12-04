@@ -180,7 +180,8 @@ int load_elf(task_struct* task, void* exe){
     else
     	mm->current->next = vma_heap;
     mm->current = vma_heap;	
-	uint64_t *heap = HEAP_START;	
+	uint64_t *heap = HEAP_START;
+	mm->brk = HEAP_START;	
 	vma_heap->start = (uint64_t)(HEAP_START); 
 	vma_heap->end = (uint64_t)(HEAP_START+PAGE_SIZE);
 	vma_heap->flags = (PERM_R | PERM_W);
