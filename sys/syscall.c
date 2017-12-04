@@ -239,6 +239,7 @@ uint64_t sys_brk(struct syscall_regs* regs){
     mm_ptr->total_vm   +=size;
     kprintf("addr %x", addr);
     regs->rax = addr;
+    //kprintf('addr1 %x',regs->rax)
     //while(1);
     //TODO yinquanhao do we need to actually allocate a space?
     return addr;

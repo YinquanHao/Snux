@@ -26,6 +26,7 @@ static __inline uint64_t syscall_1(uint64_t syscallNum, uint64_t a1) {
             :"=a"(ret)
             :"a"(syscallNum),"D"(a1)
             : "memory");
+    //kprintf("syscall_1 ret %x",ret);
     return ret;
 }
 

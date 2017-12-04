@@ -24,6 +24,17 @@ void free(void *data);
 void *malloc(size_t size);
 
 
+char *strcpy(char *dest, const char *source);
+
+size_t strlen(char *str);
+
+int strcmp(const char *str1,const char *str2);
+
+char *strstr(const char *haystack, const char *needle);
+
+char* strtok(char *str, const char* delim);
+
+char *strcat(char *dest, const char *src);
 
 
 // the file system part
