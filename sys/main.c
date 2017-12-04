@@ -103,7 +103,12 @@ kprintf("memory_length %x main", memory_length);
 init_kernalmem(physfree);
 
 init_virt_phy_mapping(memory_length);
+
+init_tarfs();
+//while(1);
+
 set_msr();
+
 terminal_init();
 
 init_pid();

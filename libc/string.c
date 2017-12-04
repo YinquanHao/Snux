@@ -50,7 +50,7 @@ char *strstr(const char *haystack, const char *needle){
 	return NULL;
 }
 
-
+/*
 char* strtok(char *str, const char* delim) {
     static char* _buffer;
     if(str != NULL) _buffer = str;
@@ -77,6 +77,69 @@ char* strtok(char *str, const char* delim) {
  
     return ret;
 }
+*/
+
+char* strtok(
+	char* parse_str,
+	const char* delims)
+{
+
+	static char *token = NULL;
+	char *str_ptr = NULL;
+	int index = 0;
+	int str_len = strlen(delims);
+ 
+	if(!parse_str && !token)
+		return NULL;
+ 
+	if(parse_str && !token)
+        	token = parse_str;
+ 
+	/*
+	 * skip delimiters
+	 */
+
+	str_ptr = token;
+	while(1) {
+        	for(index = 0; index < str_len; index ++) {
+            		if(*str_ptr == delims[index]) {
+                		str_ptr ++;
+                		break;
+            		}
+        	}
+ 
+		if(index == str_len) {
+               		token = str_ptr;
+               		break;
+        	}
+    	}
+ 
+
+	/*
+	 * End of String 
+	 */
+
+	if(*token == '\0') {
+		token = NULL;
+		return token;
+	}
+
+	while(*token != '\0') {
+		for(index = 0; index < str_len; index ++) {
+			if(*token == delims[index]) {
+				*token = '\0';
+                		break;
+            		}
+        	}
+ 
+        	token ++;
+        	
+		if (index < str_len)
+            		break;
+    	}
+    	return str_ptr;
+}
+
 
 
 char *strcat(char *dest, const char *src){
