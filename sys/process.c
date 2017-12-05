@@ -222,16 +222,41 @@ task_struct* create_user_process(char* filename){
     void *stack = (void *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
 	//make task->rsp points to the highest address of the stack
 	task->rsp = task->kstack = ((uint64_t)stack +0x1000 -16);
+	
 
+/*
+	char buf[50] ="rootfs/";
+	char file_cp[50] = "\0";
+	strcpy(file_cp,filename);
+	kprintf("file_cp %s \n",file_cp);
+	char* token;
+	char* last;
+	last = token = strtok(file_cp, "/");
+	for (;(token = strtok(NULL, "/")) != NULL; last = token);
+	kprintf("len   %s\n", last);
+	kprintf("filename %s\n",filename);
+	filename = strtok(filename,last);
+	kprintf("filename %s\n",filename);
+	strcat(buf,filename);
+	kprintf("filename %s\n",buf);
+	kprintf("length %d\n",strlen(buf));
+	buf[strlen(buf)-1] = '\0';
+	kprintf("filename %s\n",buf);
+	task->cur_dir = sys_opendir("rootfs/bin");
+	//kprintf("task->cur_dir %s \n",task->cur_dir);
+*/
+    task->cur_dir = sys_opendir("rootfs/bin");
 
-
-    
+    int fd  = sys_open("rootfs/bin/test");
+    char buf[100];
+    int read = sys_read(3,buf,100);
    	//get the pid for the process
     int pid=get_pid();
     //set the pid
     task->pid=pid;
     //set the rsp
-
+    kprintf("the fd %d \n",fd);
+    kprintf("the fd %d \n",read);
     //get the prev_cr3 and store it in prev_cr3
     void* prev_cr3 = get_CR3();
     //create new pml4 and this pml4 is in kernel space

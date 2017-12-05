@@ -1,7 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <dirent.h>
+#include <unistd.h>
 
 int main(){
+
+	int fd = open("rootfs/bin/test",2);
+	char* buf = (char*) malloc(50);
+	ssize_t size = read(fd,buf,50);
+	printf("%d\n", size);
+	printf("%s",buf);
 	/*
 	int a =0;
 	char b='t';
@@ -16,6 +24,7 @@ int main(){
 	*/
 	//char buf[10] = {'a', 'b', 'd', 0, 0, 0, 0, 0, 0, 0};	
 	//write(1, &buf, 1);
+	/*
 	char* str;
 	str = (char*) malloc(25);
 	strcpy(str,"hello, world");
@@ -35,6 +44,14 @@ int main(){
 	strcpy(str2,"qwueuiqwieu");
 	printf("this:%s \n",str2);
 
+	DIR* dir = opendir("/rootfs/bin");
+
+
+	printf("reaches here\n");
+
+
+	//printf("%s",dir->node->name);
+*/
 	while(1);
 	return 1;
 }

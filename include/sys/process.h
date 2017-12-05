@@ -1,6 +1,7 @@
 #ifndef _PROCESS_H
 #define _PROCESS_H
 #include <sys/defs.h>
+#include <dirent.h>
 #define PROCESS_NUM 2048
 #define CODE_VMA 0
 #define DATA_VMA 1
@@ -29,6 +30,8 @@ typedef struct PCB {
 	enum { RUNNING, SLEEPING, ZOMBIE } state;
 	int exit_status;
 	uint64_t* kstack;
+	DIR* cur_dir;
+	struct fd* fd[100];
 } task_struct;
 
 
