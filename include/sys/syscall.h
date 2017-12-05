@@ -37,6 +37,7 @@ dirent* sys_readdir(struct DIR* dir);
 DIR* sys_opendir(char *path);
 int sys_open(char *path, uint64_t flag);
 int sys_read(uint64_t fd_count,uint64_t addr,uint64_t len);
-
+int sys_close(int fd);
+uint64_t sys_getdents(int fd,uint64_t buf,uint64_t len);
 
 #endif

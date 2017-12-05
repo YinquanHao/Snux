@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <syscall.h>
+#include <stdio.h>
 
 int open( const char *pathname, int flags){
 	int res = (int)syscall_2(SYS_open,(uint64_t)pathname,(uint64_t)flags);
@@ -15,5 +16,10 @@ ssize_t read(int fd, void *buf, size_t count) {
 	if(res<1){
 		return -1;
 	}
+	return res;
+}
+
+int close(int fd){
+	int res = (int)syscall_1(SYS_close,fd);
 	return res;
 }

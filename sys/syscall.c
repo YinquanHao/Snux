@@ -98,6 +98,7 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 			regs->rax = sys_open((char*)regs->rdi,(uint64_t)regs->rsi);
 			break;
 		case SYS_close:
+			regs->rax = sys_close((uint64_t)regs->rdi);
 			break;
 		case SYS_pipe:
 			break;
@@ -106,6 +107,7 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 		case SYS_mmap:
 			break;
 		case SYS_getdents:
+			regs->rax = sys_getdents((uint64_t)regs->rdi,(uint64_t)regs->rsi,(uint64_t)regs->rdx);
 			break;
 //		case SYS_mumap:
 //			break;
@@ -416,6 +418,23 @@ int sys_read(uint64_t fd_count,uint64_t addr,uint64_t len)
       }
 
      return -1;
+}
+
+
+//close a file descriptor
+int sys_close(int fd){
+	if(current->fd[fd]==NULL) return -1;
+	current->fd[fd] = NULL;
+	return 0;
+}
+
+
+//get dirent
+uint64_t sys_getdents(int fd,uint64_t buf,uint64_t len){
+    dirent *dir = (dirent *)buf;
+    dir->inode_no = current->fd[fd]->inode_no;
+    memcpy(dir->d_name,current->fd[fd]->node->name,len);
+	return (uint64_t)len;
 }
 
 

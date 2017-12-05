@@ -4,6 +4,7 @@
 #include <sys/defs.h>
 
 int main();
+
 void exit(int status);
 
 
@@ -20,7 +21,9 @@ void* sbrk(size_t size);
 struct super_block* get_free(struct super_block** last, size_t size);
 struct super_block* request_block(struct super_block* prev,size_t size);
 struct super_block *get_block_header(void *pt);
+//Done
 void free(void *data);
+//Done
 void *malloc(size_t size);
 
 

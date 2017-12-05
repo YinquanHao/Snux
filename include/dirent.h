@@ -22,9 +22,10 @@ struct file_t {
     uint64_t inode_no;
 };
 
+//reverse the attribute order to fool the mem
 struct dirent {
-	uint64_t inode_no;
  	char d_name[NAME_MAX+1];
+ 	uint64_t inode_no;
 };
 
 typedef struct DIR DIR;
@@ -34,7 +35,7 @@ struct DIR {
     uint64_t current;
     dirent current_dirent;
 	int fd;
-	char buf[20];
+	char buf[30];
 };
 
 
@@ -45,10 +46,13 @@ struct fd {
     file_t* node;
 };
 
+//Done
 DIR *opendir(const char *name);
 
+//Done
 struct dirent *readdir(DIR *dirp);
 
+//Done
 int closedir(DIR *dirp);
 
 //the root file

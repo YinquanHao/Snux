@@ -247,16 +247,19 @@ task_struct* create_user_process(char* filename){
 */
     task->cur_dir = sys_opendir("rootfs/bin");
 
-    int fd  = sys_open("rootfs/bin/test");
-    char buf[100];
-    int read = sys_read(3,buf,100);
+    //int fd  = sys_open("rootfs/test/hello");
+    //kprintf("the fd %d \n",fd);
+    //int clo = sys_close(fd);
+    //kprintf("the clo %d \n",clo);
+    //char buf[100];
+    //int read = sys_read(3,buf,100);
    	//get the pid for the process
     int pid=get_pid();
     //set the pid
     task->pid=pid;
     //set the rsp
-    kprintf("the fd %d \n",fd);
-    kprintf("the fd %d \n",read);
+    //kprintf("the fd %d \n",fd);
+    //kprintf("the fd %d \n",read);
     //get the prev_cr3 and store it in prev_cr3
     void* prev_cr3 = get_CR3();
     //create new pml4 and this pml4 is in kernel space

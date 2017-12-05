@@ -6,17 +6,34 @@
 #include <sys/virtualmem.h>
 #include <stdlib.h>
 
-DIR *opendir(const char *name){
-	DIR* dirt = (DIR *)syscall_1(SYS_opendir,(uint64_t)name);
-	return dirt;
-}
-
-struct dirent *readdir(DIR *dirp){
-	dirent* res;
-	res = (dirent *)syscall_1(SYS_readdir,(uint64_t)dirp);
-	return res;	
-}
 
 int closedir(DIR *dirp){
-    int res = (int)syscall_1(SYS_closedir,(uint64_t)dirp);
+    int ret = close(dirp->fd);
+	free(dirp);
+	return ret;
+}
+
+
+DIR *opendir(const char *name){
+	int fd = open(name, O_RDONLY);
+	DIR *dir;
+	if(fd<0) return NULL;
+	if (!(dir = malloc(sizeof(*dir)))) {
+		syscall_1(SYS_close, fd);
+		return 0;
+	}
+	dir->fd = fd;
+	return dir;
+}
+
+
+
+struct dirent *readdir(DIR *dir){
+	struct dirent *de;
+	int len = syscall_3(SYS_getdents, dir->fd, dir->buf, sizeof(dir->buf));
+	if (len <= 0) {
+		return NULL;
+	}
+	de = (void *)(dir->buf);
+	return de;
 }
