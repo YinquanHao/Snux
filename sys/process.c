@@ -246,7 +246,8 @@ task_struct* create_user_process(char* filename){
 	//kprintf("task->cur_dir %s \n",task->cur_dir);
 */
     task->cur_dir = sys_opendir("rootfs/bin");
-
+    strcpy(task->cwd,"rootfs/bin");
+    kprintf("cwd: task->cwd %s \n",task->cwd);
     //int fd  = sys_open("rootfs/test/hello");
     //kprintf("the fd %d \n",fd);
     //int clo = sys_close(fd);

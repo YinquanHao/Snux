@@ -23,3 +23,14 @@ int close(int fd){
 	int res = (int)syscall_1(SYS_close,fd);
 	return res;
 }
+
+
+int chdir(const char *path){
+	int res = (int)syscall_1(SYS_chdir,path);
+	return res;
+}
+
+char *getcwd(char *buf, size_t size){
+	uint64_t res = (uint64_t)syscall_2(SYS_getcwd,buf,size);
+	return res;
+}

@@ -85,8 +85,10 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 			getpid(regs);
 			break;
 		case SYS_getcwd:
+			regs->rax = sys_getcwd((char*)regs->rdi,(uint64_t)regs->rsi);
 			break;
 		case SYS_chdir:
+		    regs->rax = sys_chdir((char*)regs->rdi);
 			break;
 		case SYS_write:
 			sys_write(regs);
@@ -397,7 +399,7 @@ int sys_read(uint64_t fd_count,uint64_t addr,uint64_t len)
 
         uint64_t len_read=0;
         uint64_t len_end =0;
-        uint64_t count;
+        //uint64_t count;
 
 //      struct task_struct *current_task = current;
         /*
@@ -435,6 +437,26 @@ uint64_t sys_getdents(int fd,uint64_t buf,uint64_t len){
     dir->inode_no = current->fd[fd]->inode_no;
     memcpy(dir->d_name,current->fd[fd]->node->name,len);
 	return (uint64_t)len;
+}
+
+
+// change process's current working directory
+int sys_chdir(char *path){
+    DIR *newdir = sys_opendir(path);
+	if (newdir == NULL)
+		return -1;
+	current->cur_dir = newdir;
+	strcpy(current->cwd,path);
+	return 0;
+}
+
+//get current working directory
+uint64_t sys_getcwd(char *buf, size_t size){
+	if(size>=strlen(current->cwd)){
+		strcpy(buf,current->cwd);
+		return (uint64_t)buf;
+	}
+	return NULL;
 }
 
 

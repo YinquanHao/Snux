@@ -31,7 +31,9 @@ typedef struct PCB {
 	int exit_status;
 	uint64_t* kstack;
 	DIR* cur_dir;
+	char cwd[100];
 	struct fd* fd[100];
+
 } task_struct;
 
 

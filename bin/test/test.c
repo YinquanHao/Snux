@@ -4,6 +4,47 @@
 #include <unistd.h>
 
 int main(){
+	
+	char* buf = (char*) malloc(50);
+	uint64_t res = getcwd(buf,50);
+	printf("%s\n",buf);
+
+	chdir("rootfs");
+	res = getcwd(buf,50);
+	//printf("hellllllllllo !!%s\n",buf);
+	
+	chdir("rootfs/test");
+	res = getcwd(buf,50);
+	//printf("%s\n",buf);
+
+	chdir("rootfs/bin");
+	res = getcwd(buf,50);
+	//printf("%s\n",buf);
+
+	int fd = open("rootfs/test/hello.txt",2);
+	char* buf1 = (char*) malloc(50);
+	ssize_t size = read(fd,buf1,50);
+/*
+	for(int i =0;i<100;i++){
+		printf("%s\n",buf1);
+	}
+	*/
+	//printf("%d\n", size);
+	printf("%s",buf1);
+	int clo  = close(fd);
+
+	//printf("%d \n", clo);
+	malloc(50);
+	malloc(50);
+	malloc(50);
+	malloc(50);
+	malloc(50);
+	malloc(50);
+	malloc(50);
+	malloc(50);
+	malloc(50);
+
+
 	/*
 	int fd = open("rootfs/test/hello.txt",2);
 	char* buf = (char*) malloc(50);
@@ -14,6 +55,7 @@ int main(){
 	printf("%d \n", clo);
 */
 	//malloc(sizeof(DIR));
+	/*
 	DIR* dir = opendir("rootfs/bin");
 	printf("ppr");
 	printf("hhh1 %d \n",(dir->fd));
@@ -21,6 +63,7 @@ int main(){
 	printf("directory %s",dirp->d_name);
 	int clodir  = closedir(dir);
 	printf("clodir%d\n",clodir);
+	*/
 	//printf("directoty 's fd %d",dir->fd);
 
 	/*
