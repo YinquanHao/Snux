@@ -41,4 +41,5 @@ int sys_close(int fd);
 uint64_t sys_getdents(int fd,uint64_t buf,uint64_t len);
 uint64_t sys_getcwd(char *buf, size_t size);
 int sys_chdir(char *path);
+int sys_execve(char *filename, char **argv, char **envp);
 #endif

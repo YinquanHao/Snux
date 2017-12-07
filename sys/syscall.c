@@ -5,6 +5,7 @@
 #include <sys/virtualmem.h>
 #include <dirent.h>
 #include <sys/string.h>
+#include <sys/tarfs.h>
 extern task_struct* current;
 
 void set_msr(){
@@ -105,6 +106,7 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 		case SYS_pipe:
 			break;
 		case SYS_execve:
+			regs->rax  = sys_execve((uint64_t)regs->rdi,(uint64_t)regs->rsi,(uint64_t)regs->rdx);
 			break;
 		case SYS_mmap:
 			break;
@@ -459,6 +461,163 @@ uint64_t sys_getcwd(char *buf, size_t size){
 	return NULL;
 }
 
+
+
+
+
+int sys_execve(char *filename, char **argv, char **envp){
+	char buf[6][128];
+
+	memset(buf,'\0',6*128);
+
+
+	/* push the filename on the userstack */
+	uint64_t argc=0; 
+	strcpy(buf[argc], filename);
+	argc++;
+
+	/* if arguments passed are not NULL copy them */ 
+	if(argv != NULL) {
+		uint64_t ct = 0;
+		while(argv[ct] != NULL){
+            strcpy(buf[argc],argv[ct]);
+            argc++;
+			ct++;
+        }
+	}
+    	  
+	/* create a new task structure */
+	task_struct *task = (task_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
+
+	/* copy pid and ppid */
+	task->pid = current->pid;
+
+	/* copy file descriptors */ 
+	memcpy(&(task->fd[0]),&(current->fd[0]),(sizeof(current->fd[0])* 100));
+
+        /* read the elf header from the provided binary */
+    posix_header_t *hd = get_binary(buf[0]);
+
+    if(hd == NULL) {
+        kprintf("Binary not found!\n");
+        return -1;
+    }
+
+    //get the prev_cr3 and store it in prev_cr3
+    void* prev_cr3 = get_CR3();
+    //create new pml4 and this pml4 is in kernel space
+	void* new_PML4 = set_user_addr_space();
+    //mask the new_PML4's address back to physical
+    new_PML4 = ((uint64_t)new_PML4)^VIRT_ST;
+    //set the task->cr3 to new created PML4 (physical)
+    task->cr3 = new_PML4;
+    //set the cr3 to new PML4
+    set_CR3((uint64_t)new_PML4);
+
+
+    void *stack = (void *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
+	//make task->rsp points to the highest address of the stack
+	task->rsp = task->kstack = ((uint64_t)stack +0x1000 -16);
+
+    
+    /* allocate space to mm structure */
+    task->vir_top = VMA_VA_ST;
+    //allocate the user_space and map it into vir_top
+    user_space_allocate(task->vir_top);
+    //make the mm struct points to the  mm
+    mm_struct *mm = (mm_struct *)(task->vir_top);
+    //increment the vir_top as one pg size
+    task->vir_top+=PAGE_SIZE;
+    //set task
+	task->mm = mm;
+
+    load_elf(task,(void*)(hd+1));
+
+	void *st_ptr = (void *)(USER_STACK_TOP - sizeof(buf)- 16);
+
+    memcpy(st_ptr, (void *)buf, sizeof(buf));
+
+	int i=argc;
+
+    for(; i>0; i--){
+    	*(uint64_t*)(st_ptr - 8*i) = (uint64_t)st_ptr + (argc-i)*128;
+    }
+
+    st_ptr = st_ptr - 8*argc;
+        task->rsp = (uint64_t)st_ptr;
+
+	set_CR3((struct PML4 *)prev_cr3);
+
+	/* free memory allocated to vmas */
+        //free_memory_map(current->mm);
+	//current->mm->mmap = NULL;
+
+        /* All the vmas are freed, now free the memory map */
+        //kfree((uint64_t)current->mm);
+        //current->mm = NULL;
+
+        /* free the page  tables */
+        //delete_pagetable(current->cr3);
+
+/*set the new task as parents next ,set current's next as task's newxtr*/
+	task_struct *prev = current->next;
+	while(prev->next != current)
+		prev = prev->next;
+	
+	prev->next = task;
+	task->next = current->next;
+	current = task;
+
+	/* set current directory of the process */
+    strcpy(task->cwd,"/rootfs/bin");
+
+	/* set wait_on_child_pid to -1 */
+
+	/*
+	task->wait_on_child_pid = -1;
+	task->task_state = TASK_RUNNING;
+	*/
+
+
+
+	switch_to_ring3(task);
+
+ 
+    /* set the task state segment register  kstack*/
+    //tss.rsp0 = task->kstack;
+/*
+	 __asm__ __volatile__ (
+	"sti;"
+	"movq %0, %%cr3;"
+        "movq %1, %%rsp;"
+        "mov $0x23, %%ax;"
+        "mov %%ax, %%ds;"
+        "mov %%ax, %%es;"
+        "mov %%ax, %%fs;"
+        "mov %%ax, %%gs;"
+
+        "movq %2, %%rax;"
+        "pushq $0x23;"
+        "pushq %%rax;"
+        "pushfq;"
+        "popq %%rax;"
+        "orq $0x200, %%rax;"
+        "pushq %%rax;"
+        "pushq $0x1B;"
+        "pushq %3;"
+        "movq %4, %%rsi;"
+        "movq %5, %%rdi;"
+        "iretq;"
+        ::"r"(task->cr3), "r"(task->kernel_stack), "r"(task->rsp), "r"(task->rip),"r"(ptr), "r"(argc)
+    );
+*/
+    return -1;
+
+}
+
+void exit(int exit_status){
+	return 0;
+}
 
 
 

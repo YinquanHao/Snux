@@ -34,3 +34,12 @@ char *getcwd(char *buf, size_t size){
 	uint64_t res = (uint64_t)syscall_2(SYS_getcwd,buf,size);
 	return res;
 }
+
+
+int execvpe( const char *filename, char *const argv[], char *const envp[]){        
+	if(filename==NULL){
+		return -1;
+	}
+	int res = (int)syscall_3(SYS_execve,(uint64_t)filename,(uint64_t)argv,(uint64_t)envp);
+	return res;
+}

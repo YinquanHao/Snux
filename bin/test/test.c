@@ -4,7 +4,31 @@
 #include <unistd.h>
 
 int main(){
-	
+
+char *argv[] = {
+    "argv1",
+    "argv2",
+    "argv3",
+    "argv4",
+    NULL,
+};
+
+
+char *envp[] = {
+    "envp1",
+    "envp2",
+    "envp3",
+    "envp4",
+    NULL,
+};
+
+
+printf("inside main \n");
+
+int res = execvpe("bin/test1",argv,envp);
+
+
+/*
 	char* buf = (char*) malloc(50);
 	uint64_t res = getcwd(buf,50);
 	printf("%s\n",buf);
@@ -24,12 +48,14 @@ int main(){
 	int fd = open("rootfs/test/hello.txt",2);
 	char* buf1 = (char*) malloc(50);
 	ssize_t size = read(fd,buf1,50);
+	*/
 /*
 	for(int i =0;i<100;i++){
 		printf("%s\n",buf1);
 	}
 	*/
 	//printf("%d\n", size);
+	/*
 	printf("%s",buf1);
 	int clo  = close(fd);
 
