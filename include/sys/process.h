@@ -27,14 +27,17 @@ typedef struct PCB {
 	uint64_t vir_top;
 	struct PCB* next;
 	mm_struct* mm;
-	enum { RUNNING, SLEEPING, ZOMBIE } state;
+	enum { RUNNING, SLEEPING, ZOMBIE, READY } state;
 	int exit_status;
 	uint64_t* kstack;
+	uint64_t ppid;
+	uint64_t waitpid;
 	DIR* cur_dir;
 	char cwd[100];
 	struct fd* fd[100];
 
 } task_struct;
+
 
 
 struct mm_struct {
@@ -100,6 +103,14 @@ task_struct* create_user_process(char* filename);
 void set_user_task_struct_mm(task_struct* task);
 vma_struct* select_vma_by_type();
 task_struct* get_current_task();
-void user_space_allocate(uint64_t viraddr);
+//void user_space_allocate(uint64_t viraddr);
 task_struct* get_current_task();
+void copy_child_mm(task_struct *child);
+uint64_t fork();
+int sys_dowait4(uint64_t c_pid,uint64_t* status, uint64_t options);
+task_struct* get_task_by_pid(uint64_t pid);
+void wake_up(task_struct* task);
+uint64_t user_space_allocate(uint64_t viraddr);
+void copy_child_table(task_struct *child);
+void set_up_child_stack(task_struct* child);
 #endif

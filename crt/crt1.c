@@ -27,5 +27,5 @@ void _start(void) {
 	int res;
 	res = main(argc, argv, envp);
 
-	exit(res);*/
+	exit(res);*/	
  }

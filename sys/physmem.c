@@ -119,6 +119,25 @@ int free_page(unsigned long index){
 
 
 
+uint64_t get_ref_ct(uint64_t index){
+	page_t *page_tmp;
+	page_tmp=physical_page_start+index;
+	return page_tmp->ref_ct;
+}
+
+void increase_ref_ct(uint64_t index){
+	page_t *page_tmp;
+	page_tmp=physical_page_start+index;
+	page_tmp->ref_ct=(page_tmp->ref_ct)+1;	
+}
+
+void decrease_ref_ct(uint64_t index){
+	page_t *page_tmp;
+	page_tmp=physical_page_start+index;
+	page_tmp->ref_ct=(page_tmp->ref_ct)-1;	
+} 
+
+
 
 
 

@@ -4,7 +4,17 @@
 #include <unistd.h>
 
 int main(){
-
+	int status=0;
+	int k = fork();
+	if(k) {
+		printf("parent  ");
+       	waitpid(2, &status);
+    }else {
+    	status = 10;
+        printf("child");
+    }
+    printf("our");
+/*
 char *argv[] = {
     "argv1",
     "argv2",
@@ -25,10 +35,8 @@ char *envp[] = {
 
 printf("inside main \n");
 
-int res = execvpe("bin/test1",argv,envp);
 
 
-/*
 	char* buf = (char*) malloc(50);
 	uint64_t res = getcwd(buf,50);
 	printf("%s\n",buf);
@@ -48,12 +56,13 @@ int res = execvpe("bin/test1",argv,envp);
 	int fd = open("rootfs/test/hello.txt",2);
 	char* buf1 = (char*) malloc(50);
 	ssize_t size = read(fd,buf1,50);
-	*/
-/*
+
 	for(int i =0;i<100;i++){
-		printf("%s\n",buf1);
+		printf("%s",buf1);
 	}
-	*/
+
+	int res1 = execvpe("bin/test1",argv,envp);
+
 	//printf("%d\n", size);
 	/*
 	printf("%s",buf1);

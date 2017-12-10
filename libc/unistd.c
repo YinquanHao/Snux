@@ -43,3 +43,14 @@ int execvpe( const char *filename, char *const argv[], char *const envp[]){
 	int res = (int)syscall_3(SYS_execve,(uint64_t)filename,(uint64_t)argv,(uint64_t)envp);
 	return res;
 }
+
+pid_t fork(void){
+	//if res==-1
+	uint64_t res =  syscall_0(SYS_fork);
+	printf("res %d\n", res);
+	return res;
+}
+
+int waitpid(int pid, int *status){
+	return syscall_3(SYS_wait4,pid,status,0);
+}

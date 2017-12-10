@@ -81,6 +81,8 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 			kprintf("call exit");
 			break;
 		case SYS_fork:
+			regs->rax = sys_fork(regs);
+			return regs->rax;
 			break;
 		case SYS_getpid:
 			getpid(regs);
@@ -113,9 +115,12 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 		case SYS_getdents:
 			regs->rax = sys_getdents((uint64_t)regs->rdi,(uint64_t)regs->rsi,(uint64_t)regs->rdx);
 			break;
+
+
 //		case SYS_mumap:
 //			break;
 		case SYS_wait4:
+			syscall_wait4(regs);
 			break;
 		case SYS_brk:
 			return sys_brk(regs);
@@ -617,6 +622,17 @@ int sys_execve(char *filename, char **argv, char **envp){
 
 void exit(int exit_status){
 	return 0;
+}
+
+
+uint64_t sys_fork(struct syscall_regs* regs){
+	regs->rax=fork();
+	return regs->rax;
+}
+
+uint64_t syscall_wait4(struct syscall_regs* regs){
+	sys_dowait4(regs->rdi,regs->rsi,regs->rdx);
+return 0;
 }
 
 

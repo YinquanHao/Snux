@@ -250,9 +250,9 @@ void user_process_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_PML4
         }    
     }
     pdpt_tab = (pdpt_t)get_tb_virt_addr(PDPT_LEVEL,vir_addr);
-    kprintf("pdpt_tab addr %x",pdpt_tab);
+    //kprintf("pdpt_tab addr %x",pdpt_tab);
     uint64_t pdpt_entry=pdpt_tab->PDPTE[page_dir_pt_index];
-    kprintf("pdpt_entry addr %x",pdpt_entry);
+    //kprintf("pdpt_entry addr %x",pdpt_entry);
     if(pdpt_entry & PT_P ){ 
         entry_address=(pdpt_entry)&PERM_MASK;      
         pdt_tab=(pdt_t)(entry_address);
@@ -410,7 +410,7 @@ void user_process_vir_phy_mapping(uint64_t vir_addr, uint64_t phy_addr, pml4_t u
     unsigned long page_entry=phy_addr;
     page_entry=page_entry|PT_P|PT_U|PT_W; //set the page table flags
     pt_tab->PTE[page_tb_index]=page_entry;
-    kprintf("pml4_index: %d page_tb_index: %d ",pml4_index, page_tb_index);
+    //kprintf("pml4_index: %d page_tb_index: %d ",pml4_index, page_tb_index);
 }
 
 
@@ -537,7 +537,7 @@ void* set_pt(pdt_t pdt, unsigned long pdt_index, int is_kernal) {
     }else if(is_kernal==USER_MEM){
         pt = (pt_t) kmalloc(USER_MEM,1);
     }else{
-              pt = (pt_t) kmalloc(KERNAL_MEM,1);
+        pt = (pt_t) kmalloc(KERNAL_MEM,1);
     }
     //kprintf("pt table address %x \n", pt);
     unsigned long pt_entry = (unsigned long) pt;
@@ -623,6 +623,37 @@ void *memcpy(void *dest,const void *src,uint64_t n){
         n--;
     }
     return dest;
+}
+
+
+void set_pml4e_bits(uint64_t vaddr, uint64_t flags){
+    uint64_t pml4_index = (((vaddr) >> 39) & 0x1FF);
+    pml4_t pml4_tab=(pml4_t)get_tb_virt_addr(PML4_LEVEL,vaddr);
+    //kprintf(" %x", pml4_tab->PML4E[pml4_index]);
+    pml4_tab->PML4E[pml4_index]|=flags;
+
+}
+
+void set_pdpte_bits(uint64_t vaddr, uint64_t flags){
+    uint64_t page_dir_pt_index  = (((vaddr) >> 30) & 0x1FF);
+    pdpt_t pdpt_tab=(pdpt_t)get_tb_virt_addr(PDPT_LEVEL,vaddr);
+    //kprintf(" %x", pdpt_tab->PDPTE[page_dir_pt_index]);        
+    pdpt_tab->PDPTE[page_dir_pt_index]|=flags;
+}
+
+void set_pdte_bits(uint64_t vaddr, uint64_t flags){
+    uint64_t page_dir_index  = (((vaddr) >> 21) & 0x1FF);
+    pdt_t pdt_tab=(pdt_t)get_tb_virt_addr(PDT_LEVEL,vaddr);
+    //kprintf(" %x", pdt_tab->PDTE[page_dir_index]);    
+    pdt_tab->PDTE[page_dir_index]|=flags;
+}
+
+
+void set_pte_bits(uint64_t vaddr, uint64_t flags){
+    uint64_t page_tb_index =  (((vaddr) >> 12) & 0x1FF);
+    pt_t pt_tab=(pt_t)get_tb_virt_addr(PT_LEVEL,vaddr);
+    //kprintf(" %x", pt_tab->PTE[page_tb_index]);
+    pt_tab->PTE[page_tb_index]|=flags;
 }
 
 

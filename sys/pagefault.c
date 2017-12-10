@@ -1,45 +1,54 @@
 #include <sys/pagefault.h>
 #include <sys/process.h>
 #include <sys/virtualmem.h>
-#define vir_copy 0xFFFFFFFF80040000UL
-
+#include <sys/physmem.h>
 
 
 void page_fault_handler(struct regs *r)
 {
-    __asm__ __volatile__("xchg %bx, %bx");
+    kprintf(" pf14");
+    //__asm__ __volatile__("xchg %bx, %bx");
     uint64_t error=r->err_code & 0xF;
     uint64_t vaddr;
     __asm volatile("mov %%cr2, %0" : "=r" (vaddr));
 
     if(error&0x1){//the page is presented 
         if(error&0x2){// protection fault during write
-
-            /*
-
-            uint64_t phy_address=get_physical_addr_user(vaddr);
-            allocate_vir_page(vaddr,0);
-            uint64_t phy_page=allocate_page();
-            
-
-
-            uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,f_address);
-            user_process_mapping(vir_copy,phy_page,pml4_addr,0);
-            memset(vir_copy,0,4096);
-            uint64_t phy_addr=get_physical_addr(vaddr);
-            phy_addr=phy_addr&PERM_MASK;
-            memcpy((void*)vir_copy,(void*)f_address,4096);
-            user_process_mapping(vaddr,phy_addr,cur_pml4,0);
-            vir_copy=vir_copy+0x1000;
-            //user_process_mapping_v2()
-            user_space_allocate(vir_copy);
-            memset(vir_copy,0,4096);
-            uint64_t phy_addr=get_physical_addr(f_address);
-            phy_addr=phy_addr&PERM_MASK;
-            memcpy((void*)vir_copy,(void*)f_address,4096);
-            uint64_t pml4_addr=get_tb_virt_addr(PML4_LEVEL,f_address);
-            user_process_mapping(f_address,phy_addr,pml4_addr,0);
-            */
+            uint64_t ref_ct;
+            uint64_t vaddr_masked=vaddr&PERM_MASK;
+            uint64_t index=(uint64_t)(get_physical_addr_user(vaddr_masked)/0x1000);
+            ref_ct=get_ref_ct(index);
+            if(ref_ct==1){//set write bits for the entry
+                set_pml4e_bits(vaddr,PT_W);
+                set_pdpte_bits(vaddr,PT_W);
+                set_pdte_bits(vaddr,PT_W);
+                set_pte_bits(vaddr,PT_W);
+            }
+            else{//allocate copy
+                uint64_t vir_copy;
+                task_struct *task = get_current_task();
+                vma_struct *vma=task->mm->mmap;
+/*                while(vma->type!=HEAP_VMA&&vma!=NULL){
+                    vma=vma->next;
+                }
+                if(vma->end+0x1000<HEAP_LIMIT){
+                    vir_copy=vma->end;
+                    vma->end+=0x01000;
+                }*/
+                vir_copy=task->vir_top;
+                user_space_allocate(vir_copy);
+                task->vir_top+=0x1000;
+                memset(vir_copy,0,4096);
+                uint64_t phy_addr=get_physical_addr_user(vir_copy);
+                phy_addr=phy_addr&PERM_MASK;
+                memcpy((void*)vir_copy,(void*)vaddr_masked,4096);
+                uint64_t pml4_addr=get_tb_virt_addr(PML4_LEVEL,vaddr_masked);
+                user_process_mapping(vaddr_masked,phy_addr,pml4_addr,0);
+                set_pml4e_bits(vaddr,PT_W);
+                set_pdpte_bits(vaddr,PT_W);
+                set_pdte_bits(vaddr,PT_W);
+                set_pte_bits(vaddr,PT_W);
+            }
         }
     }else{//demand page
         demand_paging(vaddr);

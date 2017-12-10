@@ -3,6 +3,7 @@
 #include <sys/defs.h>
 #include <dirent.h>
 
+
 #define SYS_exit       60
 #define SYS_fork       57
 #define SYS_getpid     39
@@ -42,4 +43,6 @@ uint64_t sys_getdents(int fd,uint64_t buf,uint64_t len);
 uint64_t sys_getcwd(char *buf, size_t size);
 int sys_chdir(char *path);
 int sys_execve(char *filename, char **argv, char **envp);
+uint64_t sys_fork();
+uint64_t syscall_wait4();
 #endif

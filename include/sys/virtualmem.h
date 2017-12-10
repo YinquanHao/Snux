@@ -22,6 +22,7 @@
 #define PT_P 0x001 //present
 #define PT_W 0x002 //writable
 #define PT_U 0x004 //user
+#define PT_COW 0x800 //copy on write 1000-0000-0000
 
 #define PML4_LEVEL 1
 #define PDPT_LEVEL 2
@@ -80,4 +81,14 @@ void test_self_ref();
 //uint64_t get_tb_virtual_addr(uint64_t level, uint64_t entry_belong_to);
 uint64_t get_tb_virt_addr(uint64_t level, uint64_t virt_addr);
 uint64_t get_physical_addr_user(uint64_t virt_addr);
+
+void set_pml4e_bits(uint64_t vaddr, uint64_t flags);
+
+
+void set_pdpte_bits(uint64_t vaddr, uint64_t flags);
+
+void set_pdte_bits(uint64_t vaddr, uint64_t flags);
+
+
+void set_pte_bits(uint64_t vaddr, uint64_t flags);
 #endif
