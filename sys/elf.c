@@ -164,7 +164,7 @@ int load_elf(task_struct* task, void* exe){
     mm->current = vma_stack;	
 	uint64_t *stack = USER_STACK_TOP;	
 	vma_stack->start = (uint64_t)(stack); 
-	vma_stack->end = (uint64_t)(stack-PAGE_SIZE);
+	vma_stack->end = (uint64_t)((uint64_t)stack-(uint64_t)PAGE_SIZE);
 	vma_stack->flags = (PERM_R | PERM_W);
 	vma_stack->type = STACK;
 	vma_stack->file = NULL;
@@ -183,7 +183,7 @@ int load_elf(task_struct* task, void* exe){
 	uint64_t *heap = HEAP_START;
 	mm->brk = HEAP_START;	
 	vma_heap->start = (uint64_t)(HEAP_START); 
-	vma_heap->end = (uint64_t)(HEAP_START+PAGE_SIZE);
+	vma_heap->end = (uint64_t)((uint64_t)HEAP_START+(uint64_t)PAGE_SIZE);
 	vma_heap->flags = (PERM_R | PERM_W);
 	vma_heap->type = HEAP;
 	vma_heap->file = NULL;

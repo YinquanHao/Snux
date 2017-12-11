@@ -543,13 +543,13 @@ uint64_t fork(){
 
 	}else{
 		set_CR3(child->cr3);
-		//set_tss_rsp(child->kstack);
+		set_tss_rsp(child->kstack);
 		return 0;
 	}
 }
 
 
-/*void __attribute__((optimize("O0"))) copy_child_table(task_struct *child){
+void __attribute__((optimize("O0"))) copy_child_table(task_struct *child){
     //allocate the user_space and map it into vir_top
     uint64_t phy_addr = user_space_allocate(child->vir_top);
     //keep an copy of pml4_c physical address
@@ -623,7 +623,7 @@ uint64_t fork(){
     							uint64_t pt_entry = pt_p->PTE[m];
     							if(pt_entry & PT_P){
     								//copy the value
-    								pt_c->PTE[m] = pt_p->PTE[m]|(uint64_t)PT_COW;
+    								pt_c->PTE[m] = pt_p->PTE[m];
     							}
     						}
     					}
@@ -635,8 +635,8 @@ uint64_t fork(){
     set_CR3(pml4_c_phy);
     //while(1);
 }
-*/
 
+/*
 void __attribute__((optimize("O0"))) copy_child_table(task_struct *child){
     //allocate the user_space and map it into vir_top
     uint64_t phy_addr = user_space_allocate(child->vir_top);
@@ -727,13 +727,13 @@ void __attribute__((optimize("O0"))) copy_child_table(task_struct *child){
     //while(1);
 }
 
+*/
 
 
 
-
-
+/*
 void copy_child_mm(task_struct *child){
-	/*copy the parent vma*/
+	/
 
 	//set child's vir_top back to it's parents
 	//child->vir_top = current->vir_top;
@@ -810,7 +810,120 @@ void copy_child_mm(task_struct *child){
 		parent_vma=parent_vma->next;
 	}
 	//while(1);
+}*/
+
+
+void copy_child_mm(task_struct *child){
+	/*copy the parent vma*/
+
+	//set child's vir_top back to it's parents
+	//child->vir_top = current->vir_top;
+	//allocate an new user space
+	user_space_allocate(child->vir_top);
+	//make the new created user space points to child_mm
+	mm_struct *child_mm=(mm_struct*)(child->vir_top);
+	//increment the child process's vir_top
+	child->vir_top+=0x1000;
+	//set child->mm
+	child->mm=child_mm;
+	//get head of parent's vma
+	vma_struct *parent_vma=current->mm->mmap;
+	//create a pointer points to child_vma
+	vma_struct *child_vma=NULL;
+	//create a vma pointer as prev
+	vma_struct *prev;
+	//set is first flog
+	uint64_t is_first=1;
+
+	uint64_t phyaddr;
+	//set cr3 back to the cuurent->cr3 (Do we really need that?)
+	//set_CR3(current->cr3);
+	//memcpy the parent->mm
+	memcpy((void*)child->mm,(void*)current->mm,0x1000);
+	// if parent has vmas
+	while(parent_vma!=NULL){
+		//if this is the head of vma list
+		if(is_first==1){
+			//allocate a new user_space 
+			phyaddr = user_space_allocate(child->vir_top);
+			vma_struct *child_vma=(vma_struct*)(child->vir_top);
+			child->vir_top+=0x1000;
+			//copy the attributes lazy cpy here
+			child_vma->start=parent_vma->start;
+			child_vma->end=parent_vma->end;
+			child_vma->flags=parent_vma->flags;
+			child_vma->type=parent_vma->type;
+			if(parent_vma->file!=NULL){
+				user_space_allocate(child->vir_top);
+				struct file* child_vma_file =(vma_struct*)(child->vir_top);
+				child->vir_top+=0x1000;
+				memcpy(child_vma_file,parent_vma->file,sizeof(struct file));
+				child_vma->file = child_vma_file;
+			}else if(parent_vma->type==STACK){
+				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->start-(uint64_t)parent_vma->end));
+			}else if(parent_vma->type==HEAP){
+				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->end-(uint64_t)parent_vma->start));
+			}
+			//set is_first flag back to 0
+			is_first=0;
+			//set mm_map
+
+			child->mm->mmap=child_vma;
+
+			child_vma->next = parent_vma->next;
+
+			child_vma->mm = child->mm;
+
+
+			uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,0);
+    		kprintf("parent process vma %x",(uint64_t)parent_vma);
+    		user_process_mapping((uint64_t)parent_vma,phyaddr,pml4_addr,0);
+
+    		set_CR3(child->cr3);
+			//set prev
+			prev=child_vma;
+
+		}else{
+			phyaddr = user_space_allocate(child->vir_top);
+			vma_struct *child_vma=(vma_struct*)(child->vir_top);
+			child->vir_top+=0x1000;
+			child_vma->start=parent_vma->start;			
+			child_vma->end=parent_vma->end;
+			child_vma->flags=parent_vma->flags;
+			child_vma->type=parent_vma->type;
+			//link the vma list
+			if(parent_vma->file!=NULL){
+				user_space_allocate(child->vir_top);
+				struct file* child_vma_file =(vma_struct*)(child->vir_top);
+				child->vir_top+=0x1000;
+				memcpy(child_vma_file,parent_vma->file,sizeof(struct file));
+				child_vma->file = child_vma_file;
+			}else if(parent_vma->type==STACK){
+				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->start-(uint64_t)parent_vma->end));
+			}else if(parent_vma->type==HEAP){
+				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->end-(uint64_t)parent_vma->start));
+			}
+			child_vma->mm = child->mm;
+
+			child_vma->next = parent_vma->next;
+
+			prev->next=child_vma;
+
+
+			uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,0);
+    		kprintf("parent process vma %x",(uint64_t)parent_vma);
+    		user_process_mapping((uint64_t)parent_vma,phyaddr,pml4_addr,0);
+
+    		set_CR3(child->cr3);
+
+			prev=child_vma;
+		}
+		//iterator to parent's next_vma
+		parent_vma=parent_vma->next;
+	}
+	//while(1);
 }
+
 
 int sys_dowait4(uint64_t c_pid,uint64_t* status, uint64_t options){
 	if(c_pid>0){// wait for specific process

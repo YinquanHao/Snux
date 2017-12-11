@@ -112,6 +112,9 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 			break;
 		case SYS_mmap:
 			break;
+		case SYS_listfiles:
+		 	regs->rax = sys_listfiles((char *)regs->rdi,(uint64_t)regs->rsi);
+		 	break;
 		case SYS_getdents:
 			regs->rax = sys_getdents((uint64_t)regs->rdi,(uint64_t)regs->rsi,(uint64_t)regs->rdx);
 			break;
@@ -421,7 +424,7 @@ int sys_read(uint64_t fd_count,uint64_t addr,uint64_t len)
         if (len > (len_end - len_read))
                 len = len_end - len_read;
          current->fd[fd_count]->current +=len;
-         memcpy((void *)addr,(void *)len_read,len);//define memcpy
+         memcpy((void *)addr,(void *)len_read,len);
 
        return len;
       }
@@ -635,6 +638,20 @@ uint64_t syscall_wait4(struct syscall_regs* regs){
 return 0;
 }
 
+int sys_listfiles(char *path) {
+    char a[100] = { 0 };
+    strcpy(a,path);
+    DIR *c = sys_opendir(a);
+    dirent *dir;
+    while ((dir = sys_readdir(c)) != NULL){
+        kprintf("%s\n", dir->d_name);
+    }
+    return 0;
+}
+
+
+
+
 
 
 
@@ -678,3 +695,50 @@ char *print_node(file_t *p_node){
         *str = '\0';
         return buffer;
 }*/
+
+/*
+int sys_catfiles(char *filename,int pipe){
+	// if the filename == NULL return -1;
+	if(filename == NULL)
+		return -1;
+	//create a buffer
+	char buf[128] = {0};
+
+    if (pipe == RD_PIPE){
+        //printf("%s \n",pipe_buffer);
+	print_catfiles(pipe_buffer);
+    } else if (pipe == WR_PIPE || pipe == NO_PIPE){
+        bzero(pipe_buffer,4096);
+	int fd1;
+	fd1 = sys_open(a,O_RDWR);
+	if (fd1 != -1)
+		sys_read((uint64_t)fd1,(uint64_t)pipe_buffer,4096);
+	else { 
+
+		dir *file = sys_opendir(path);
+		if (file) {
+			printf("cat : %s is a directory \n",path);
+		} else {
+			printf("incorrect file name \n");
+		}
+		return 0;
+	}
+	if (pipe == NO_PIPE){
+		print_catfiles(pipe_buffer);
+		printf("\n");	
+		//printf("%s \n",pipe_buffer);
+	}
+    }
+    return 0;
+}
+*/
+
+//print by line by tokenize the input string by "/n"
+void print_by_line(char* input){
+	char *tok;
+	tok = strtok(input,"\n");
+	while (input != NULL){
+		kprintf("%s \n",tok);
+		tok = strtok(NULL,"\n");
+	}
+}

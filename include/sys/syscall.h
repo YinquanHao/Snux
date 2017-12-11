@@ -23,6 +23,7 @@
 #define SYS_opendir     4
 #define SYS_readdir     5
 #define SYS_closedir    6
+#define SYS_listfiles  16
 #define O_RDONLY  		0
 #define O_WRONLY		1
 

@@ -7,13 +7,13 @@ int main(){
 	int status=0;
 	int k = fork();
 	if(k) {
-		printf("parent  ");
+		printf("parent \n");
        	waitpid(2, &status);
     }else {
     	status = 10;
-        printf("child");
+        printf("child \n");
     }
-    printf("our");
+    printf("our %d",status);
 /*
 char *argv[] = {
     "argv1",
