@@ -4,6 +4,8 @@
 #include <unistd.h>
 
 int main(){
-    printf("hello\n" );
-    while(1);
+    printf("hello!!!!!!!!!!!!!!!!!!!!1\n" );
+    //while(1);
+
+    return 0;
 }

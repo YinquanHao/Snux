@@ -89,8 +89,8 @@ int load_elf(task_struct* task, void* exe){
 			//how many pgs we need to allocate
 			uint64_t pg_num = length/PAGE_SIZE;
 
-			kprintf("length %x \n",length);
-			kprintf("pg_num %x \n",pg_num);
+			//kprintf("length %x \n",length);
+			//kprintf("pg_num %x \n",pg_num);
 
 			//allocate a new page for the vma
 			user_space_allocate(task->vir_top);

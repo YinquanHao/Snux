@@ -3,19 +3,9 @@
 #include <dirent.h>
 #include <unistd.h>
 
+
 int main(){
-	int status=0;
-	int k = fork();
-	if(k) {
-		printf("parent \n");
-       	waitpid(2, &status);
-    }else {
-    	status = 10;
-        printf("child \n");
-    }
-    printf("our %d",status);
-/*
-char *argv[] = {
+	char *argv[] = {
     "argv1",
     "argv2",
     "argv3",
@@ -33,6 +23,22 @@ char *envp[] = {
 };
 
 
+	int status=0;
+	int k = fork();
+	if(k) {
+		printf("parent \n");
+       	waitpid(2, &status);
+    }else {
+    	status = 10;
+        printf("child \n");
+        //waitpid(2, &status);
+        execvpe("bin/test1",argv,envp);
+    }
+    printf("test11111111111111111111111111111111111111111111111111111111111111 %d",status);
+
+
+
+/*
 printf("inside main \n");
 
 

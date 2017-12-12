@@ -114,14 +114,15 @@ void kprintf(const char *fmt, ...){
 			c++;
 			x++;
 		}
-/*		if(x==80&&y==19){
+		if(x==80&&y==19){
 			x=0;
 			y=0;
 		}
 		if(y==18){
 			x++;
 			y=0;
-		}*/
+		}
+		/*
 		if(x==80){
 			x=0;
 			y++;
@@ -132,6 +133,7 @@ void kprintf(const char *fmt, ...){
 				break;
 			}
 		}
+		*/
 		//TODO(@yinquanhao) add scroll functionality.
 
 	}

@@ -6,7 +6,7 @@
 
 void page_fault_handler(struct regs *r)
 {
-    kprintf(" pf14");
+    kprintf("enter page fault\n");
     //__asm__ __volatile__("xchg %bx, %bx");
     uint64_t error=r->err_code & 0xF;
     uint64_t vaddr;
@@ -52,9 +52,9 @@ void page_fault_handler(struct regs *r)
         }
     }else{//demand page
         demand_paging(vaddr);
-        kprintf("finished demand");
+        //kprintf("finished demand");
     }
-    kprintf("page fault handler error code %x",error);
+    //kprintf("page fault handler error code %x",error);
     //while(1);
 
 }

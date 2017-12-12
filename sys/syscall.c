@@ -78,7 +78,7 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 //while(1);
 	switch(regs->rax){
 		case SYS_exit:
-			kprintf("call exit");
+			sys_exit((uint64_t)regs->rdi);
 			break;
 		case SYS_fork:
 			regs->rax = sys_fork(regs);
@@ -113,7 +113,7 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 		case SYS_mmap:
 			break;
 		case SYS_listfiles:
-		 	regs->rax = sys_listfiles((char *)regs->rdi,(uint64_t)regs->rsi);
+		 	regs->rax = sys_listfiles((char *)regs->rdi);
 		 	break;
 		case SYS_getdents:
 			regs->rax = sys_getdents((uint64_t)regs->rdi,(uint64_t)regs->rsi,(uint64_t)regs->rdx);
@@ -500,6 +500,8 @@ int sys_execve(char *filename, char **argv, char **envp){
 	/* copy pid and ppid */
 	task->pid = current->pid;
 
+	task->ppid = current->ppid;
+
 	/* copy file descriptors */ 
 	memcpy(&(task->fd[0]),&(current->fd[0]),(sizeof(current->fd[0])* 100));
 
@@ -527,7 +529,7 @@ int sys_execve(char *filename, char **argv, char **envp){
 	//make task->rsp points to the highest address of the stack
 	task->rsp = task->kstack = ((uint64_t)stack +0x1000 -16);
 
-    
+    //memcpy(stack,current->kstack)
     /* allocate space to mm structure */
     task->vir_top = VMA_VA_ST;
     //allocate the user_space and map it into vir_top
@@ -548,7 +550,7 @@ int sys_execve(char *filename, char **argv, char **envp){
 	int i=argc;
 
     for(; i>0; i--){
-    	*(uint64_t*)(st_ptr - 8*i) = (uint64_t)st_ptr + (argc-i)*128;
+    	*(uint64_t*)((uint64_t)st_ptr - (uint64_t)8*i) = (uint64_t)st_ptr + (uint64_t)(argc-i)*128;
     }
 
     st_ptr = st_ptr - 8*argc;
@@ -644,7 +646,8 @@ int sys_listfiles(char *path) {
     DIR *c = sys_opendir(a);
     dirent *dir;
     while ((dir = sys_readdir(c)) != NULL){
-        kprintf("%s\n", dir->d_name);
+       kprintf("%s  ",dir->d_name);
+       // sys_write(1,dir->d_name,strlen(dir->d_name));
     }
     return 0;
 }

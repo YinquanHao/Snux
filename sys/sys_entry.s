@@ -10,10 +10,12 @@ syscall_entry:
 # swapgs
 # movq
 #xchg %bx, %bx 
+
 movq %rsp, %r10
 movq kernel_rsp, %rsp
+
 pushq %r10
-# pushq	$0x23	/* regs->ss */
+
 # pushq	PER_CPU_VAR(rsp_scratch)	/* regs->sp */
 pushq	%r11	#regs->flags 
 # pushq	$0x2B	/* regs->cs */

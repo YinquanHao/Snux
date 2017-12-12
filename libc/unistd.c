@@ -55,6 +55,6 @@ int waitpid(int pid, int *status){
 	return syscall_3(SYS_wait4,pid,status,0);
 }
 
-int listfiles(char *path,int pipe){
-    return (int) syscall_2(SYS_listfiles,(uint64_t)path,(uint64_t)pipe);
+int listfiles(char *path){
+    return (int) syscall_1(SYS_listfiles,(uint64_t)path);
 }

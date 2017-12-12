@@ -32,7 +32,7 @@ pid_t getpid(void);
 
 pid_t getppid(void);
 //Need Test
-int listfiles(char *path,int pipe);
+int listfiles(char *path);
 // OPTIONAL: implement for ``on-disk r/w file system (+10 pts)''
 off_t lseek(int fd, off_t offset, int whence);
 //int mkdir(const char *pathname, mode_t mode);

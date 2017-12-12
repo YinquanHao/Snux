@@ -52,7 +52,7 @@ task_struct* create_init_kthread(){
 	//make rip points to the initial function
 	task->rip=(uint64_t)&init_thread_fn;
 	//TODO @yinquanhao state and exit_status for the task (Need to modify later not correct)
-	task->state = 1;
+	task->state = 3;
 	task->exit_status = 0;
 	//add task (initialize and keep track of the  first, end and current task structure)
 	add_task(task);
@@ -88,7 +88,7 @@ task_struct* create_new_kthread(void* thread){
 	//make rip points to the initial function
 	task->rip=(uint64_t) thread;
 	//TODO @yinquanhao state and exit_status for the task (Need to modify later not correct)
-	task->state = 1;
+	task->state = 3;
 	task->exit_status = 0;
 	//add task (initialize and keep track of the  first, end and current task structure)
 	add_task(task);
@@ -119,8 +119,10 @@ void add_task(task_struct * task) {
 }
 
 void context_switch(task_struct *me,task_struct *next){
-	current = current->next;
+	//set_CR3(next->cr3);
+	//
 	//__asm__ __volatile__("xchg %bx, %bx");
+	//set_tss_rsp(next->rsp);
 
 	//push all registers on current thread's stack
 	__asm__ __volatile__ (
@@ -146,11 +148,17 @@ void context_switch(task_struct *me,task_struct *next){
 		"movq %%rsp, %0"
 		:"=r"(me->rsp)
 	);
+
+	__asm volatile("mov %0, %%cr3":: "r"(next->cr3));
+
+	current = next;
 	
 	//change the rsp register with next thread's stack
 	__asm__ __volatile__ (	
 		"movq %0, %%rsp"::"r"(next->rsp)
 	);
+
+	//set_CR3(next->cr3);
 
 	__asm__ __volatile__ (
 		"popq %r15;"
@@ -218,7 +226,7 @@ void schedule(){
 void schedule(){
 	task_struct* temp=current->next;
 	while(temp){
-		if(temp!=current&&temp->state==READY){
+		if(temp!=current/*&&temp->state==READY*/&&(temp->pid)!=0){
 			context_switch(current,temp);
 		return;
 		}else{//else if()
@@ -237,6 +245,14 @@ task_struct* create_user_process(char* filename){
 	//make task->rsp points to the highest address of the stack
 	task->rsp = task->kstack = ((uint64_t)stack +0x1000 -16);
 	
+	sys_listfiles("rootfs/bin");
+
+	task->state = 3;
+
+
+
+
+
 
 /*
 	char buf[50] ="rootfs/";
@@ -390,7 +406,6 @@ current = task;
 //while(1);
 set_tss_rsp(task->kstack);
 set_CR3(task->cr3);
-__asm__ __volatile__("movq %%rsp,%0" : "=r"(rsp_cp));
 __asm__ __volatile__(
 "cli;"
     "movq %0,%%rax;"
@@ -441,34 +456,28 @@ uint64_t user_space_allocate(uint64_t viraddr){
 }
 
 
-void do_exit(int status) {
-    //task_struct *parent;
-    //current->task_state = TASK_ZOMBIE;
-    current->exit_status = status;
-
-    task_struct* temp=get_task_by_pid(current->ppid);
-   	if(temp!=NULL&&current->pid==temp->waitpid){
-   		wake_up(temp);
-   	}
-
-    /*
-     * Check if parent process is suspended (by calling waitpid())
-     * if yes, wake parent process
-     */
-    /*
-    if ((parent = find_task_struct(current->ppid))) {
+void sys_exit(int status) {
+	// current task's parent
+    task_struct *parent;
+    //set current task as zombie
+    current->state = ZOMBIE;
+    //current->ret_val = status;
+    // get parenet's task
+    if ((current->ppid!=0)) {
+    	parent  = get_task_by_pid(current->ppid);
         // if found task_struct of parent process
-        parent->wait_pid = current->pid;
-        if (parent->task_state == TASK_BLOCKED) {
-            parent->task_state = TASK_READY;
+        parent->waitpid = 0;
+        //check if parent's task is blocked
+        if (parent->state == SLEEPING) {
+        	//set parent's task as ready
+            parent->state = READY;
+             //do the context switch
+            context_switch(current,parent);
         }
+        //remove current task from the task linked list
     } else {
-        // if parent process exits
-        printf("cannot find parent process of pid %d (may terminated)\n",
-                current->ppid);
+        kprintf("cannot find parent\n");
     }
-    */
-    // current exited, so doesn't need push registers
     schedule();
 }
 
@@ -525,6 +534,8 @@ uint64_t fork(){
 	//adjust child process's rsp
 	child->rsp-=offset;
 
+	child->ppid = current->pid;
+
 	//child->rsp-=16*8;
 
 	set_up_child_stack(child);
@@ -538,12 +549,26 @@ uint64_t fork(){
 	//the return value for child process
 	uint64_t chld_ret=child->pid;
 	//return child process's pid
-	set_tss_rsp(parent->kstack);
+	__asm__ __volatile__ (	
+		"movq %%rsp, %0"
+		:"=r"(parent->rsp)
+		);
+	set_tss_rsp(parent->rsp);
+	//add_task(child);
+
+	kernel_rsp = parent->rsp;
+
 	return chld_ret;
 
 	}else{
 		set_CR3(child->cr3);
-		set_tss_rsp(child->kstack);
+
+		__asm__ __volatile__ (	
+		"movq %%rsp, %0"
+		:"=r"(child->rsp)
+		);
+		set_tss_rsp(child->rsp);
+		kernel_rsp = child->rsp;
 		return 0;
 	}
 }
@@ -942,8 +967,6 @@ task_struct* get_task_by_pid(uint64_t pid){
 	while(temp){
 		if(temp->pid==pid){
 			return temp;
-		}else if(temp->next=current){
-			return NULL;
 		}
 		temp=temp->next;
 	}

@@ -113,4 +113,5 @@ void wake_up(task_struct* task);
 uint64_t user_space_allocate(uint64_t viraddr);
 void copy_child_table(task_struct *child);
 void set_up_child_stack(task_struct* child);
+void sys_exit(int status);
 #endif
