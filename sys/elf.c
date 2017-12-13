@@ -11,14 +11,14 @@ void* get_binary(char *filename){
 	//get the posix_header_ustar points to the addr of _binary_tarfs_start
 	posix_header_t *start = (posix_header_t*)&_binary_tarfs_start;
 
-	kprintf("start->name %s \n",start->name);
+	//kprintf("start->name %s \n",start->name);
 	//kprintf("start->name %d \n",get_oct_size(start->size));
 
 	//initial the cur of the tarf as the start
 	uint64_t *cur = (uint64_t *)start;
 	//iterator through the header and find the file we want to access
 	 while ((start < (posix_header_t*) &_binary_tarfs_end)&&(start->name[0]!='\0')){
-	 	kprintf("start->name %s \n",start->name);
+	 	//kprintf("start->name %s \n",start->name);
 	 	//if the name of the file does not match skip the size of file
 	 	if(strcmp(start->name,filename)!=0){
 	 		int size = get_oct_size(start->size);
@@ -81,8 +81,8 @@ int load_elf(task_struct* task, void* exe){
 			uint64_t end = phdr->p_vaddr+phdr->p_memsz;
 			end = (end/PAGE_SIZE)*(PAGE_SIZE)+PAGE_SIZE;
 
-			kprintf("start %x \n",start);
-			kprintf("end %x \n",end);
+			//kprintf("start %x \n",start);
+			//kprintf("end %x \n",end);
 
 			//get the length of the file
 			uint64_t length = end - start;
@@ -138,7 +138,7 @@ int load_elf(task_struct* task, void* exe){
 
 				//copy the ehdr's content into vma->start(what we have created before)
 				uint64_t sum = (uint64_t)ehdr +(uint64_t)phdr->p_offset;
-				kprintf("sum %d",sum);
+				//kprintf("sum %d",sum);
 				memcpy((void*)vma->start, (void*)(sum), phdr->p_filesz);
 				//set the type and bss_size
 				if(phdr->p_flags == (PERM_R | PERM_X)) {

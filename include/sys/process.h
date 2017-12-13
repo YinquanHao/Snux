@@ -27,7 +27,7 @@ typedef struct PCB {
 	uint64_t vir_top;
 	struct PCB* next;
 	mm_struct* mm;
-	enum { RUNNING, SLEEPING, ZOMBIE, READY } state;
+	enum { RUNNING, SLEEPING, ZOMBIE, READY,WAIT} state;
 	int exit_status;
 	uint64_t* kstack;
 	uint64_t ppid;
@@ -35,7 +35,7 @@ typedef struct PCB {
 	DIR* cur_dir;
 	char cwd[100];
 	struct fd* fd[100];
-
+	uint64_t sleep_time;
 } task_struct;
 
 
@@ -114,4 +114,7 @@ uint64_t user_space_allocate(uint64_t viraddr);
 void copy_child_table(task_struct *child);
 void set_up_child_stack(task_struct* child);
 void sys_exit(int status);
+void sys_sleep(uint64_t stime);
+void clear_sleep();
+void task_list();
 #endif

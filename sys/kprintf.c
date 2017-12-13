@@ -100,10 +100,18 @@ void kprintf(const char *fmt, ...){
 
 	while (*c!='\0') {
 		if(*c=='\n'){			
-			textptr=textptr-x+VGA_WIDTH;
+			if(y<20){
+				textptr=textptr-x+VGA_WIDTH;
+				y++;
+				x=0;
+			}
+			if(y>=20){
+				scroll();
+				x=0;
+				y=19;
+				textptr = (unsigned short *)(VGA_ADDR)+x+y*VGA_WIDTH;
+			}
 			c++;
-			y++;
-			x=0;
 		}
 		else if(*c=='\r'){
 			textptr=textptr-x;
@@ -114,26 +122,29 @@ void kprintf(const char *fmt, ...){
 			c++;
 			x++;
 		}
-		if(x==80&&y==19){
+/*		if(x==80&&y==19){
 			x=0;
 			y=0;
 		}
 		if(y==18){
 			x++;
 			y=0;
-		}
-		/*
+		}*/
 		if(x==80){
-			x=0;
-			y++;
+			if(y<20){
+				x=0;
+				y++;
+				//c++;
+			}
 			if(y>=20){
 				scroll();
 				x=0;
 				y=19;
-				break;
+				//c++;
+				//break;
 			}
+			textptr = (unsigned short *)(VGA_ADDR)+x+y*VGA_WIDTH;
 		}
-		*/
 		//TODO(@yinquanhao) add scroll functionality.
 
 	}
@@ -279,7 +290,6 @@ void move_line(int dest,int source){
 	uint64_t p2=(unsigned short *)(VGA_ADDR)+(source-1)*VGA_WIDTH;
 	memcpy((void *)p1,(void *)p2,160);
 }
-
 
 
 

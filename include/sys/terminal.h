@@ -16,4 +16,8 @@ void terminal_input(char input_state,char input_char);
 uint64_t terminal_read(char *buf, int count);
 uint64_t terminal_write(int fd, char *buf, int count);
 void t_scroll();
+uint64_t standard_input(char *buf,int count);
+uint64_t getsline(char* buf);
+void clear_tbuffer();
+void backspace(unsigned short  *text);
 #endif

@@ -113,6 +113,13 @@ uint64_t syscall_handler(struct syscall_regs* regs){
         case SYS_closedir:
             regs->rax = (uint64_t)sys_closedir((struct DIR*)(regs->rdi));
             break;
+        case SYS_nanosleep:
+            sys_sleep((uint64_t)regs->rdi);
+            regs->rax=0;
+            break;
+        case SYS_ps:
+            task_list();
+            break;
 	}
 	return;
 }

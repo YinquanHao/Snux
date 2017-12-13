@@ -24,6 +24,8 @@
 #define SYS_readdir     5
 #define SYS_closedir    6
 #define SYS_listfiles  16
+#define SYS_nanosleep  35
+#define SYS_ps  	  112
 #define O_RDONLY  		0
 #define O_WRONLY		1
 

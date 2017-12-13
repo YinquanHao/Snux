@@ -2,6 +2,7 @@
 #include <sys/io.h>
 #include <sys/kprintf.h>
 #include <sys/pic.h>
+#include <sys/process.h>
 
 int ticks=0;
 int second=0;
@@ -21,8 +22,9 @@ void timer_install(){
 	if(ticks%1000==0){
 		//kprintf("1s ");
 		//kprintf("total:%d",ticks);
-	second++;
-	kprintt("%75d",second);
+		clear_sleep();
+		second++;
+		kprintt("%75d",second);
 	}
 	/*if(second==60){
 		kprintf(" 1min");

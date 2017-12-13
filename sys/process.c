@@ -792,7 +792,7 @@ void copy_child_mm(task_struct *child){
 
 
 			uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,0);
-    		kprintf("parent process vma %x",(uint64_t)parent_vma);
+    		//kprintf("parent process vma %x",(uint64_t)parent_vma);
     		user_process_mapping((uint64_t)parent_vma,phyaddr,pml4_addr,0);
 
     		set_CR3(child->cr3);
@@ -827,7 +827,7 @@ void copy_child_mm(task_struct *child){
 
 
 			uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,0);
-    		kprintf("parent process vma %x",(uint64_t)parent_vma);
+    		//kprintf("parent process vma %x",(uint64_t)parent_vma);
     		user_process_mapping((uint64_t)parent_vma,phyaddr,pml4_addr,0);
 
     		set_CR3(child->cr3);
@@ -1017,4 +1017,74 @@ void set_up_child_stack(task_struct *child){
 		"movq %0, %%rsp"::"r"(parent_rsp)
 	);
 
+}
+
+
+
+void sys_sleep(uint64_t stime){
+	current->state=SLEEPING;
+	//kprintf("%d\n",stime);
+	current->sleep_time=stime*1000;
+	if(current->next->pid==0||current->next==NULL){
+		while(current->sleep_time==0){
+			//kprintf("return");
+			return;
+		}
+	}
+	//context_switch();
+	//kprintf("sl");
+	//kprintf(" %x %x ",current->pid,current->next->pid);
+	///schedule();
+}
+
+
+void clear_sleep(){
+	task_struct* temp=current;
+	while(temp){
+		if(temp->state==SLEEPING&&temp->sleep_time>=0){
+			//kprintf("%d",temp->sleep_time);
+			temp->sleep_time-=1000;
+			if(temp->sleep_time<=0){
+				temp->sleep_time=0;
+				temp->state=READY;
+				//kprintf("back");
+			}						
+			//break;
+		}
+/*		else if(temp->next==current){
+			return ;
+		}*/
+		temp=temp->next;
+		if(temp==current){return;}
+	}
+	return;
+}
+
+
+void task_list(){
+	task_struct*temp=current;
+	kprintf("%x",temp->next->pid);
+	char* res[10]={0};
+	kprintf("\npid   ppid   state  sleep_time");
+	while(temp){
+		if(temp->state==RUNNING){
+			strcpy(res,"RUNNING");
+		}
+		else if(temp->state==SLEEPING){
+			strcpy(res,"SLEEPING");
+		}
+		else if(temp->state==READY){
+			strcpy(res,"READY");
+		}		
+
+		else if(temp->state==WAIT){
+			strcpy(res,"WAIT");
+		}		
+		
+		kprintf("\n%d|    %d|      %s|  %d",temp->pid,temp->ppid,res,temp->sleep_time);
+		if(temp->next==current){
+			return ;
+		}
+		temp=temp->next;
+	}	
 }
