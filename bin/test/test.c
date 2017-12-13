@@ -32,7 +32,7 @@ char *envp[] = {
     	status = 10;
         printf("child \n");
         //waitpid(2, &status);
-        execvpe("bin/test1",argv,envp);
+        execvpe("bin/ls",argv,envp);
     }
     printf("test11111111111111111111111111111111111111111111111111111111111111 %d",status);
     k = fork();
@@ -44,6 +44,15 @@ char *envp[] = {
     	execvpe("bin/test1",argv,envp);
     }
     printf("thanks giving!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    k = fork();
+    if(k){
+    	printf("liwen\n");
+    	waitpid(2,&status);
+    }else{
+    	printf("child22\n");
+    	execvpe("bin/test1",argv,envp);
+    }
+    printf("christmas\n");
 
 
 /*

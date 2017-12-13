@@ -11,12 +11,9 @@ task_struct* end;
 task_struct* first;
 task_struct* current;
 uint64_t last_thread;
-
+//tell which rsp to go when comes back from ring3
 uint64_t kernel_rsp;
-//register int *foo asm ("rsp");
-
-
-
+//list of pid
 int pid[PROCESS_NUM];
 
 /*init the pid array*/
@@ -119,10 +116,6 @@ void add_task(task_struct * task) {
 }
 
 void context_switch(task_struct *me,task_struct *next){
-	//set_CR3(next->cr3);
-	//
-	//__asm__ __volatile__("xchg %bx, %bx");
-	//set_tss_rsp(next->rsp);
 
 	//push all registers on current thread's stack
 	__asm__ __volatile__ (
@@ -148,20 +141,21 @@ void context_switch(task_struct *me,task_struct *next){
 		"movq %%rsp, %0"
 		:"=r"(me->rsp)
 	);
-
+	//set cr3
 	__asm volatile("mov %0, %%cr3":: "r"(next->cr3));
 
+	//change the current process
 	current = next;
 
+	//also update the tss
 	kernel_rsp = current->rsp;
-	
+
 	//change the rsp register with next thread's stack
 	__asm__ __volatile__ (	
 		"movq %0, %%rsp"::"r"(next->rsp)
 	);
 
-	//set_CR3(next->cr3);
-
+	//pop all the register values in kernel stack to registers
 	__asm__ __volatile__ (
 		"popq %r15;"
 		"popq %r14;"
@@ -180,6 +174,7 @@ void context_switch(task_struct *me,task_struct *next){
 		"popq %rax;"
 	);
 
+	//return
 	__asm__ __volatile__ (
 		"ret"
 	);
@@ -188,23 +183,12 @@ void context_switch(task_struct *me,task_struct *next){
 
 /*use this function as our main thread*/
 void init_thread_fn(){
-	kprintf("enter init_thread_fn");
-	//while(1);
+	//kprintf("enter init_thread_fn");
+	//create a new thread which execute a binary of our bash
 	task_struct* thread1 = create_user_process("bin/test");
-	//while(1);
-	//task_struct* thread1 = create_new_kthread(print_thread);
-	//task_struct *u1=create_user_process();
-	//task_struct *u2=create_user_process();
-	//schedule();
-	//while(1);
+	//switch to ring3 and start execute the binary
 	switch_to_ring3(thread1);
-	//switch_to_ring3(current);
-	//kprintf("%d",u1->pid);
-	//schedule();
-	/*kprintf("xxxxxxxxxxxxxxxxxxxxxx");
-	schedule();
-	kprintf("bbbbbbbbbbbbbbbbbbbbbbb");
-	schedule();*/
+	//TODO @YinquanHao Need some keep scheduling mechnism here
 	while(1);
 }
 
@@ -218,81 +202,52 @@ void print_thread(){
 	while(1);
 }
 
-/*schedule function*/
-/*
+//schedule next process
 void schedule(){
-	context_switch(current,current->next);
-}
-*/
-
-void schedule(){
+	//get current process as temp
 	task_struct* temp=current->next;
 	while(temp){
+		//get the process which is not current process and the state is not zombie and the pid!=0 (it's init thread cannot comes back!)
 		if(temp!=current&&temp->state!=ZOMBIE&&(temp->pid)!=0){
+			//switch to next function
 			context_switch(current,temp);
-		return;
-		}else{//else if()
+			return;
+		}else{
+			//get next process
 			temp=temp->next;
 		}
 	}
 }
 
+
+//create a user process
 task_struct* create_user_process(char* filename){
-
+	//find the binary file by giving name
 	posix_header_t *hd = get_binary(filename);
-
+	//create a new task_struct
     task_struct *task = (task_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
-
+    //create a new stack for the new process
     void *stack = (void *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
 	//make task->rsp points to the highest address of the stack
 	task->rsp = task->kstack = ((uint64_t)stack +0x1000 -16);
-	
-	sys_listfiles("rootfs/bin");
-
-	task->state = 3;
-
-
-
-
-
-
-/*
-	char buf[50] ="rootfs/";
-	char file_cp[50] = "\0";
-	strcpy(file_cp,filename);
-	kprintf("file_cp %s \n",file_cp);
-	char* token;
-	char* last;
-	last = token = strtok(file_cp, "/");
-	for (;(token = strtok(NULL, "/")) != NULL; last = token);
-	kprintf("len   %s\n", last);
-	kprintf("filename %s\n",filename);
-	filename = strtok(filename,last);
-	kprintf("filename %s\n",filename);
-	strcat(buf,filename);
-	kprintf("filename %s\n",buf);
-	kprintf("length %d\n",strlen(buf));
-	buf[strlen(buf)-1] = '\0';
-	kprintf("filename %s\n",buf);
-	task->cur_dir = sys_opendir("rootfs/bin");
-	//kprintf("task->cur_dir %s \n",task->cur_dir);
-*/
+	//set the task state to ready
+	task->state = READY;
+	//set the current working dir to rootfs/bin
     task->cur_dir = sys_opendir("rootfs/bin");
+    //save the path to task_struct
     strcpy(task->cwd,"rootfs/bin");
-    kprintf("cwd: task->cwd %s \n",task->cwd);
+    //kprintf("cwd: task->cwd %s \n",task->cwd);
     //int fd  = sys_open("rootfs/test/hello");
     //kprintf("the fd %d \n",fd);
     //int clo = sys_close(fd);
     //kprintf("the clo %d \n",clo);
     //char buf[100];
     //int read = sys_read(3,buf,100);
+
    	//get the pid for the process
     int pid=get_pid();
     //set the pid
     task->pid=pid;
-    //set the rsp
-    //kprintf("the fd %d \n",fd);
-    //kprintf("the fd %d \n",read);
     //get the prev_cr3 and store it in prev_cr3
     void* prev_cr3 = get_CR3();
     //create new pml4 and this pml4 is in kernel space
@@ -306,11 +261,11 @@ task_struct* create_user_process(char* filename){
     //set the virtual_addr in  task as the HEAP_LIMIT
     //PML4_SEL
 
-    uint64_t a = get_tb_virt_addr(PML4_LEVEL,HEAP_LIMIT);
+    //uint64_t a = get_tb_virt_addr(PML4_LEVEL,HEAP_LIMIT);
 
     //kprintf("%x",a);
 
-    uint64_t b = get_physical_addr(a);
+    //uint64_t b = get_physical_addr(a);
 
     //kprintf("%x",b);
 
@@ -323,39 +278,15 @@ task_struct* create_user_process(char* filename){
     task->vir_top+=PAGE_SIZE;
     //set task
 	task->mm = mm;
-
-
-/*
-
-	//allocate a kernel stack in user_space and map the phys addr to task->virtop
-	user_space_allocate(task->vir_top);
-    //make the stack points to task->vir_top
-    void* stack=(void *)(task->vir_top);
-    //increment the virtop as one pg size
-    task->vir_top+=PAGE_SIZE;
-    //points to the kstack to the highest addr of kernel stack
-    task->kstack=((uint64_t)stack +0x1000-16);
-
-*/
-
-
-
-
     //load the elf
-    //kprintf("size of %d",sizeof(posix_header_t));
     load_elf(task,(void*)(hd+1));
     //set the cr3 back to previous
     set_CR3((pml4_t)prev_cr3);
     //add task
     add_task(task);
+
     return task;
 }
-/*task_struct* create_test_process(){
-	 task_struct *task = (task_struct*)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
-	 void* stack=(void *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
-	 int pid=get_pid();
-
-}*/
 
 
 task_struct* get_current_task(){
@@ -363,97 +294,47 @@ task_struct* get_current_task(){
 }
 
 
-
-/*
 void switch_to_ring3(task_struct* task){
-	kprintf("ring3");	
-	kernel_rsp = current->kstack;
-	uint64_t uf=(uint64_t)&user_func;
-	uint64_t rsp_cp;
+	//kprintf("ring3");	
+	kernel_rsp = task->kstack;
+//uint64_t uf=(uint64_t)&user_func;
+//uint64_t rsp_cp;
 	current = task;
-	//kprintf("  %x,%x,%x  ",task->rsp,task->rip,task->cr3);
-	//while(1);
-	set_tss_rsp(task->kstack);
-	set_CR3(task->cr3);
-	__asm__ __volatile__("movq %%rsp,%0" : "=r"(rsp_cp));
-	__asm__ __volatile__("xchg %bx, %bx");
-	__asm__ __volatile__(
-		"cli;"
-     	"movq %0,%%rax;"
-     	"pushq $0x23;"
-    	"pushq %%rax;"
-    	"pushfq;"
-    	"popq %%rax;"
-        "orq $0x200, %%rax;"
-        "pushq %%rax;"
-     	"pushq $0x2B;"
-     	"pushq %1;"
-     	::"r"(task->rsp),"r"(task->rip)
-
-	);
-	__asm__ __volatile__(
-		"iretq;"
-	);
-
-}
-*/
-
-void switch_to_ring3(task_struct* task){
-kprintf("ring3");	
-kernel_rsp = task->kstack;
-uint64_t uf=(uint64_t)&user_func;
-uint64_t rsp_cp;
-current = task;
 //kprintf("  %x,%x,%x  ",task->rsp,task->rip,task->cr3);
 //while(1);
-set_tss_rsp(task->kstack);
-set_CR3(task->cr3);
-__asm__ __volatile__(
-"cli;"
-    "movq %0,%%rax;"
-    "pushq $0x23;"
-   	"pushq %%rax;"
-   	"pushfq;"
-   	"popq %%rax;"
-       "orq $0x200, %%rax;"
-       "pushq %%rax;"
-    "pushq $0x2B;"
-    "pushq %1;"
-    ::"r"(task->rsp),"r"(task->rip)
-
-);
-__asm__ __volatile__(
-"iretq;"
-);
-
+	set_tss_rsp(task->kstack);
+	set_CR3(task->cr3);
+	__asm__ __volatile__(
+		"cli;"
+    	"movq %0,%%rax;"
+    	"pushq $0x23;"
+   		"pushq %%rax;"
+   		"pushfq;"
+   		"popq %%rax;"
+       	"orq $0x200, %%rax;"
+       	"pushq %%rax;"
+    	"pushq $0x2B;"
+    	"pushq %1;"
+    	::"r"(task->rsp),"r"(task->rip)
+    	);
+	__asm__ __volatile__(
+		"iretq;"
+		);
 }
 
-/*void thread2_func(){
-	kprintf(" a");
-	switch_to_ring3(current);
-	while(1);
-}*/
-
-void user_func(){
-	//int i=1;
-	kprintf("uuuu ");
-
-	//switch_to_ring3(current);
-	while(1);
-}
-
+//wrapper function to allocate a user page in userspace
 uint64_t user_space_allocate(uint64_t viraddr){
 	//return the physical addr of the allocated page
 	uint64_t phyaddr = allocate_page();
 	//get the physical addr of current cr3
     uint64_t cur_pml4 = get_CR3();
-    
+    //get pml4's virtual address
     uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,viraddr);
-    
+    //do the mapping
     user_process_mapping(viraddr,phyaddr,pml4_addr,0);
     //mem set the space we just newly created
     memset(viraddr,0,PAGE_SIZE);
-
+    //return the physical address
     return phyaddr;
 }
 
@@ -480,12 +361,12 @@ void sys_exit(int status) {
     } else {
         kprintf("cannot find parent\n");
     }
+    //schedule next process
     schedule();
 }
 
 
-
-
+//fork a child process
 uint64_t fork(){
 	//save the current rsp to current->rsp
 	__asm__ __volatile__ (	
@@ -502,9 +383,9 @@ uint64_t fork(){
 	child->ppid=parent->pid;
 	//TODO yinquanhao need to fix copy child table
 	child->vir_top = parent->vir_top;
+	//copy the parent's page table to child's page table
 	copy_child_table(child);
-	//TODO verify this function is correct or not
-
+	//copy the vma
 	copy_child_mm(child);
 	// make temp process structure pointer
 	task_struct *temp;
@@ -531,46 +412,46 @@ uint64_t fork(){
 	memcpy((void*)stack,(void*)(pkstack),0x1000-16);
 
 	if(current == parent) {
+		//check the offset(usage) of parent process's kernel stack
+		uint64_t offset=(uint64_t)current->kstack-(uint64_t)current->rsp;
+		//adjust child process's rsp
+		child->rsp-=offset;
+		//set the parent pid
+		child->ppid = current->pid;
+		//set up child stack push current register to the child stack
+		set_up_child_stack(child);
 
-	uint64_t offset=(uint64_t)current->kstack-(uint64_t)current->rsp;
-	//adjust child process's rsp
-	child->rsp-=offset;
+		//kprintf("rsp:%x",child->rsp);
 
-	child->ppid = current->pid;
-
-	//child->rsp-=16*8;
-
-	set_up_child_stack(child);
-
-
-	kprintf("rsp:%x",child->rsp);
-
-	//kernal
-	set_CR3((struct PML4 *)parent->cr3);
-	//kernal
-	//the return value for child process
-	uint64_t chld_ret=child->pid;
-	//return child process's pid
-	__asm__ __volatile__ (	
-		"movq %%rsp, %0"
-		:"=r"(parent->rsp)
-		);
-	set_tss_rsp(parent->rsp);
-	//add_task(child);
-
-	kernel_rsp = parent->rsp;
-
-	return chld_ret;
+		//set the current cr3 to parent's cr3
+		set_CR3((struct PML4 *)parent->cr3);
+		//the return value for child process
+		uint64_t chld_ret=child->pid;
+		//save current rsp to parent's rsp
+		__asm__ __volatile__ (	
+			"movq %%rsp, %0"
+			:"=r"(parent->rsp)
+			);
+		//set tss
+		set_tss_rsp(parent->rsp);
+		//TODO @yinquanhao fix the tss not working issue and get rid of kernel_rsp
+		kernel_rsp = parent->rsp;
+		//return the process id
+		return chld_ret;
 
 	}else{
+		//set cr3 to child process's page table
 		set_CR3(child->cr3);
-
+		//save the rsp to child_>rsp
 		__asm__ __volatile__ (	
-		"movq %%rsp, %0"
-		:"=r"(child->rsp)
+			"movq %%rsp, %0"
+			:"=r"(child->rsp)
 		);
+		//set up the tss
 		set_tss_rsp(child->rsp);
+		//set up the kernel stack
 		kernel_rsp = child->rsp;
+		//return 0
 		return 0;
 	}
 }
@@ -1085,7 +966,7 @@ void wake_up(task_struct* task){
 }*/
 
 
-
+// setup child stack
 void set_up_child_stack(task_struct *child){
 	uint64_t parent_rsp;
 	child->rsp-=8;
@@ -1099,8 +980,6 @@ void set_up_child_stack(task_struct *child){
 	__asm__ __volatile__ (	
 		"movq %0, %%rsp"::"r"(child->rsp)
 	);
-
-	//__asm__ __volatile__("xchg %bx, %bx");
 
 	//push all registers on current thread's stack
 	__asm__ __volatile__ (

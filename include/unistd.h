@@ -17,13 +17,13 @@ int unlink(const char *pathname);
 int chdir(const char *path);
 //Done
 char *getcwd(char *buf, size_t size);
-//Wait for COW
+//Done
 pid_t fork();
-//Need test
+//Done
 int execvpe(const char *file, char *const argv[], char *const envp[]);
 
 pid_t wait(int *status);
-//Need Test
+//Done
 int waitpid(int pid, int *status);
 
 unsigned int sleep(unsigned int seconds);
@@ -31,7 +31,7 @@ unsigned int sleep(unsigned int seconds);
 pid_t getpid(void);
 
 pid_t getppid(void);
-//Need Test
+//Done
 int listfiles(char *path);
 // OPTIONAL: implement for ``on-disk r/w file system (+10 pts)''
 off_t lseek(int fd, off_t offset, int whence);

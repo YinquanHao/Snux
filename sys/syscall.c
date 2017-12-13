@@ -50,33 +50,10 @@ void set_msr(){
 	__asm__ __volatile__("wrmsr;" 
 		::"c" (msr), "a" (low_32), "d" (high_32)
 	);
-	
-/*	msr=0xC0000102;
-	low_32=0x5000;
-	high_32=0x200;
-	__asm__ __volatile__("wrmsr;" 
-		::"c" (msr), "a" (low_32), "d" (high_32)
-	);*/
-
-/*uint64_t res;
-	__asm__ __volatile__(
-		"rdmsr;"
-		::"c"(msr)
-	);
-		__asm__ __volatile__(
-		"movq %%rax, %0;"
-		:"=r"(res)
-	);
-	kprintf("%x",res);
-	while(1);*/
 }
 
 
 uint64_t syscall_handler(struct syscall_regs* regs){
-	
-//	__asm__ __volatile__("xchg %bx, %bx");
-//kprintf("%x, %x",regs->rpointer,regs->flags);
-//while(1);
 	switch(regs->rax){
 		case SYS_exit:
 			sys_exit((uint64_t)regs->rdi);
@@ -119,8 +96,6 @@ uint64_t syscall_handler(struct syscall_regs* regs){
 		case SYS_getdents:
 			regs->rax = sys_getdents((uint64_t)regs->rdi,(uint64_t)regs->rsi,(uint64_t)regs->rdx);
 			break;
-
-
 //		case SYS_mumap:
 //			break;
 		case SYS_wait4:
@@ -139,104 +114,7 @@ uint64_t syscall_handler(struct syscall_regs* regs){
             regs->rax = (uint64_t)sys_closedir((struct DIR*)(regs->rdi));
             break;
 	}
-	//__asm__ __volatile__("xchg %bx, %bx");
-//while(1);
 	return;
-
-
-
-
-/*syscall number in rax*/
-/*	__asm__ __volatile__("cli;");
-	__asm__ __volatile__("xchg %bx, %bx");
-	uint64_t kernel_rsp=(uint64_t)current->kstack;
-	uint64_t syscall_no;
-	uint64_t user_rsp=0x1000;
-	//kprintf("%x",kernel_rsp);
-	__asm__ __volatile__(
-		"movq %0,%%r10;"
-		::"d"(user_rsp)
-	);
-	while(1);
-	__asm__ __volatile__(
-		"movq %%rax, %0;"
-		:"=r"(syscall_no)
-	);
-
-	__asm__ __volatile__(
-		"movq %%rsp, %0;"
-		:"=a"(user_rsp)
-	);
-
-	__asm__ __volatile__(
-		"movq %0, %%rsp;"
-		:"=a"(current->kstack)
-	);*/
-
-	//kprintf("%x ,%x",current->kstack,user_rsp);
-
-
-	//__asm__ __volatile__("xchg %bx, %bx");
-
-/*	__asm__ __volatile__(
-		"swapgs;"
-		//"movq %gs:0,%rsp;"
-	);
-	//back up the current rsp
-	__asm__ __volatile__(
-		"swapgs;"
-		"movq %rsp, %gs"
-	);
-
-
-	__asm__ __volatile__(
-		"pushq %r15;"
-		"pushq %r14;"
-		"pushq %r13;"
-		"pushq %r12;"
-		"pushq %rbx;"
-		"pushq %rbp;"
-		"pushq %rdi;"
-		"pushq %rsi;"
-	);
-
-	__asm__ __volatile__(
-		"pushq %rcx;"
-		"pushq %r11;"
-	);*/
-
-	//uint64_t syscall_no=regs->rax;
-
-//while(1);
-/*	__asm__ __volatile__(
-		"popq %r11;"
-		"popq %rcx;"
-	);
-
-	__asm__ __volatile__(
-		"popq %rsi;"
-		"popq %rdi;"
-		"popq %rbp;"
-		"popq %rbx;"
-		"popq %r12;"
-		"popq %r13;"
-		"popq %r14;"
-		"popq %r15;"
-	);*/
-
-
-
-//kprintf("%x",user_rsp);
-/*	__asm__ __volatile__(
-		"movq %0, %%rsp;"
-		:"=a"(user_rsp)
-	);
-*/
-//while(1);
-
-	//__asm__ __volatile__("xchg %bx, %bx");
-
-
 }
 
 pid_t getpid(struct syscall_regs* regs){
@@ -473,18 +351,17 @@ uint64_t sys_getcwd(char *buf, size_t size){
 
 
 
-
+//execve function
+//TODO YinquanHao need to enable the argv and envp functionality
 int sys_execve(char *filename, char **argv, char **envp){
+	//create a buffer for the argv and envp
 	char buf[6][128];
-
+	//memset
 	memset(buf,'\0',6*128);
-
-
 	/* push the filename on the userstack */
 	uint64_t argc=0; 
 	strcpy(buf[argc], filename);
 	argc++;
-
 	/* if arguments passed are not NULL copy them */ 
 	if(argv != NULL) {
 		uint64_t ct = 0;
@@ -500,17 +377,16 @@ int sys_execve(char *filename, char **argv, char **envp){
 
 	/* copy pid and ppid */
 	task->pid = current->pid;
-
 	task->ppid = current->ppid;
 
 	/* copy file descriptors */ 
 	memcpy(&(task->fd[0]),&(current->fd[0]),(sizeof(current->fd[0])* 100));
 
-        /* read the elf header from the provided binary */
+    /* read the elf header from the provided binary */
     posix_header_t *hd = get_binary(buf[0]);
 
     if(hd == NULL) {
-        kprintf("Binary not found!\n");
+        kprintf("No Such Binary\n");
         return -1;
     }
 
@@ -525,12 +401,9 @@ int sys_execve(char *filename, char **argv, char **envp){
     //set the cr3 to new PML4
     set_CR3((uint64_t)new_PML4);
 
-
     void *stack = (void *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
 	//make task->rsp points to the highest address of the stack
 	task->rsp = task->kstack = ((uint64_t)stack +0x1000 -16);
-
-    //memcpy(stack,current->kstack)
     /* allocate space to mm structure */
     task->vir_top = VMA_VA_ST;
     //allocate the user_space and map it into vir_top
@@ -541,9 +414,9 @@ int sys_execve(char *filename, char **argv, char **envp){
     task->vir_top+=PAGE_SIZE;
     //set task
 	task->mm = mm;
-
+	//load the elf
     load_elf(task,(void*)(hd+1));
-
+    //TODO need to varify following part
 	void *st_ptr = (void *)(USER_STACK_TOP - sizeof(buf)- 16);
 
     memcpy(st_ptr, (void *)buf, sizeof(buf));
@@ -556,82 +429,34 @@ int sys_execve(char *filename, char **argv, char **envp){
 
     st_ptr = st_ptr - 8*argc;
         task->rsp = (uint64_t)st_ptr;
-
+    //set cr3 back
 	set_CR3((struct PML4 *)prev_cr3);
 
-	/* free memory allocated to vmas */
-        //free_memory_map(current->mm);
-	//current->mm->mmap = NULL;
-
-        /* All the vmas are freed, now free the memory map */
-        //kfree((uint64_t)current->mm);
-        //current->mm = NULL;
-
-        /* free the page  tables */
-        //delete_pagetable(current->cr3);
-
-/*set the new task as parents next ,set current's next as task's newxtr*/
+	/*set the new task as parents next ,set current's next as task's newxtr*/
 	task_struct *prev = current->next;
-	while(prev->next != current)
+	while(prev->next != current){
 		prev = prev->next;
-	
+	}
 	prev->next = task;
 	task->next = current->next;
 	current = task;
+	//need to setup the end task reference
 	end = task;
-
 	/* set current directory of the process */
     strcpy(task->cwd,"/rootfs/bin");
-
-	/* set wait_on_child_pid to -1 */
-
-	/*
-	task->wait_on_child_pid = -1;
-	task->task_state = TASK_RUNNING;
-	*/
-
-
-
+    //switch to ring3 and execute the task
 	switch_to_ring3(task);
 
- 
-    /* set the task state segment register  kstack*/
-    //tss.rsp0 = task->kstack;
-/*
-	 __asm__ __volatile__ (
-	"sti;"
-	"movq %0, %%cr3;"
-        "movq %1, %%rsp;"
-        "mov $0x23, %%ax;"
-        "mov %%ax, %%ds;"
-        "mov %%ax, %%es;"
-        "mov %%ax, %%fs;"
-        "mov %%ax, %%gs;"
-
-        "movq %2, %%rax;"
-        "pushq $0x23;"
-        "pushq %%rax;"
-        "pushfq;"
-        "popq %%rax;"
-        "orq $0x200, %%rax;"
-        "pushq %%rax;"
-        "pushq $0x1B;"
-        "pushq %3;"
-        "movq %4, %%rsi;"
-        "movq %5, %%rdi;"
-        "iretq;"
-        ::"r"(task->cr3), "r"(task->kernel_stack), "r"(task->rsp), "r"(task->rip),"r"(ptr), "r"(argc)
-    );
-*/
     return -1;
 
 }
 
+//NOT USED?
 void exit(int exit_status){
 	return 0;
 }
 
-
+// for sys_call wrapper
 uint64_t sys_fork(struct syscall_regs* regs){
 	regs->rax=fork();
 	return regs->rax;
@@ -639,9 +464,10 @@ uint64_t sys_fork(struct syscall_regs* regs){
 
 uint64_t syscall_wait4(struct syscall_regs* regs){
 	sys_dowait4(regs->rdi,regs->rsi,regs->rdx);
-return 0;
+	return 0;
 }
 
+//listfile syscall wrapper
 int sys_listfiles(char *path) {
     char a[100] = { 0 };
     strcpy(a,path);
