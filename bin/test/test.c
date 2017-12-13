@@ -4,7 +4,9 @@
 #include <unistd.h>
 
 
-int main(){
+int main(int argc, char* argv[], char* envp[]){
+
+	/*
 	char *argv[] = {
     "argv1",
     "argv2",
@@ -20,7 +22,7 @@ char *envp[] = {
     "envp3",
     "envp4",
     NULL,
-};
+};*/
 
 
 	int status=0;

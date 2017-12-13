@@ -357,6 +357,8 @@ int sys_execve(char *filename, char **argv, char **envp){
 	//create a buffer for the argv and envp
 	char buf[6][128];
 	//memset
+
+
 	memset(buf,'\0',6*128);
 	/* push the filename on the userstack */
 	uint64_t argc=0; 
@@ -423,12 +425,16 @@ int sys_execve(char *filename, char **argv, char **envp){
 
 	int i=argc;
 
-    for(; i>0; i--){
+    for(; i>1; i--){
     	*(uint64_t*)((uint64_t)st_ptr - (uint64_t)8*i) = (uint64_t)st_ptr + (uint64_t)(argc-i)*128;
     }
 
-    st_ptr = st_ptr - 8*argc;
-        task->rsp = (uint64_t)st_ptr;
+    //store the last variable as NULL on the stack
+    *(uint64_t*)((uint64_t)st_ptr - 8) = NULL;
+
+
+    st_ptr = st_ptr - 8*(argc);
+    task->rsp = (uint64_t)st_ptr;
     //set cr3 back
 	set_CR3((struct PML4 *)prev_cr3);
 

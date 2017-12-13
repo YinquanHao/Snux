@@ -3,7 +3,7 @@
 #include <dirent.h>
 #include <unistd.h>
 
-int main(){
+int main(int argc, char* argv[], char* envp[]){
     printf("hello!!!!!!!!!!!!!!!!!!!!1\n" );
     //while(1);
 

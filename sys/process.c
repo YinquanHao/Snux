@@ -185,7 +185,15 @@ void context_switch(task_struct *me,task_struct *next){
 void init_thread_fn(){
 	//kprintf("enter init_thread_fn");
 	//create a new thread which execute a binary of our bash
-	task_struct* thread1 = create_user_process("bin/test");
+	task_struct* thread1 = create_user_process("bin/init");
+
+	//char* argv[3] = { "a1", "a2", NULL };
+
+    //char* envp[4] = { "PATH=bin:rootfs/bin", "HOME=rootfs/bin", "USER=ROOT", NULL};
+
+    //sys_execve("bin/test",argv,envp);
+
+
 	//switch to ring3 and start execute the binary
 	switch_to_ring3(thread1);
 	//TODO @YinquanHao Need some keep scheduling mechnism here

@@ -2,9 +2,10 @@
 #define _STDLIB_H
 
 #include <sys/defs.h>
+//TODO yinquanhao enable the arguments
+int main(int argc, char* argv[], char* envp[]);
 
-int main();
-
+//Done
 void exit(int status);
 
 
@@ -40,6 +41,6 @@ char* strtok(char *str, const char* delim);
 char *strcat(char *dest, const char *src);
 
 
-// the file system part
+//Done?
 ssize_t write(int fd, const void *buf, size_t count);
 #endif
