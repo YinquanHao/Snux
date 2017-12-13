@@ -7,6 +7,7 @@
 #include <sys/string.h>
 #include <sys/tarfs.h>
 extern task_struct* current;
+extern task_struct* end;
 
 void set_msr(){
 	uint64_t msr=0xC0000080;
@@ -577,6 +578,7 @@ int sys_execve(char *filename, char **argv, char **envp){
 	prev->next = task;
 	task->next = current->next;
 	current = task;
+	end = task;
 
 	/* set current directory of the process */
     strcpy(task->cwd,"/rootfs/bin");

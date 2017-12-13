@@ -113,7 +113,7 @@ void add_task(task_struct * task) {
 	/*normal case for adding task*/
 	else{
 		end->next=task;
-		end=task;
+		end=end->next;
 		end->next=first;
 	}
 }
@@ -152,6 +152,8 @@ void context_switch(task_struct *me,task_struct *next){
 	__asm volatile("mov %0, %%cr3":: "r"(next->cr3));
 
 	current = next;
+
+	kernel_rsp = current->rsp;
 	
 	//change the rsp register with next thread's stack
 	__asm__ __volatile__ (	
@@ -226,7 +228,7 @@ void schedule(){
 void schedule(){
 	task_struct* temp=current->next;
 	while(temp){
-		if(temp!=current/*&&temp->state==READY*/&&(temp->pid)!=0){
+		if(temp!=current&&temp->state!=ZOMBIE&&(temp->pid)!=0){
 			context_switch(current,temp);
 		return;
 		}else{//else if()
