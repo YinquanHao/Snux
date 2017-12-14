@@ -31,7 +31,7 @@ int main(int argc, char* argv[], char* envp[]) {
                 "envp3",
                  NULL
             };
-            execvpe("bin/test", argv, envp);
+            execvpe("bin/sbush", argv, envp);
         } else {
             printf("error in fork!\n");
         }

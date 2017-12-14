@@ -38,10 +38,13 @@ void handle_keyboard(){
 	}else if(input == 0x9D){
 		ctlPressed = 0;
 	}else if(input>=F1 && input<=F10){
-		kprintf("enter F");
+/*		kprintf("enter F");
 		state = 'F';
-		key = (int)input-F1+1;
+		key = (int)input-F1+1;*/
 	}
+	else if(input==0x39||input==0xB9){
+		terminal_input(state,key);
+	}	
 /*else if(ctlPressed==1&&input==0x32){
 	state = '^';key = scan_code[input];kprintkb(state,key);PIC_sendEOI(33);
 }*/

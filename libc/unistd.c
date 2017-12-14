@@ -58,3 +58,43 @@ int waitpid(int pid, int *status){
 int listfiles(char *path){
     return (int) syscall_1(SYS_listfiles,(uint64_t)path);
 }
+
+void clear_screen(){
+	int res=syscall_0(SYS_clearscreen);
+	return;
+}
+
+void ps(){
+	syscall_0(SYS_ps);
+}
+
+int cat(char *path){
+	int res;
+	printf("file:%s",path );
+	res=(int)syscall_1(SYS_cat,path);
+	if(res<0){
+		printf("\nfile not found");
+	}
+	return res;
+}
+
+unsigned int sleep(unsigned int seconds){
+	int res;
+	res=(int)syscall_1(SYS_nanosleep,(uint64_t)seconds);
+	return res;
+}
+
+int read_input(int fd, void *buf, size_t count) {
+	if(fd < 0){
+		return 0;
+	}
+	ssize_t res= (ssize_t)syscall_3(SYS_readinput,(uint64_t)fd,(uint64_t)buf,(uint64_t)count);
+	if(res<1){
+		return -1;
+	}
+	return res;
+}
+
+int kill(pid_t pid, int sig){
+    return (int) syscall_2(SYS_kill,(uint64_t)pid,(uint64_t)sig);
+}

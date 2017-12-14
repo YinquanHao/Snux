@@ -26,6 +26,12 @@
 #define SYS_listfiles  16
 #define SYS_nanosleep  35
 #define SYS_ps  	  112
+#define SYS_getppid	  110
+#define SYS_clearscreen 111
+#define SYS_cat         113
+#define SYS_readinput   114
+#define SYS_kill		115
+#define SYS_gets 		116
 #define O_RDONLY  		0
 #define O_WRONLY		1
 
@@ -48,4 +54,5 @@ int sys_chdir(char *path);
 int sys_execve(char *filename, char **argv, char **envp);
 uint64_t sys_fork();
 uint64_t syscall_wait4();
+int sys_cat(char *path);
 #endif

@@ -39,6 +39,7 @@ char *strstr(const char *haystack, const char *needle);
 char* strtok(char *str, const char* delim);
 
 char *strcat(char *dest, const char *src);
+int putChar(char c);
 
 
 //Done?

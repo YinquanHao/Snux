@@ -92,6 +92,7 @@ task_struct* create_kthread(/* void (*fn)(int)*/void* thread);
 void add_task(task_struct * task);
 void init_pid();
 int get_pid();
+uint64_t sys_getppid();
 void context_switch(task_struct *me,task_struct *next);
 void init_thread_fn();
 task_struct* create_init_kthread();
@@ -117,4 +118,7 @@ void sys_exit(int status);
 void sys_sleep(uint64_t stime);
 void clear_sleep();
 void task_list();
+void freeVaddr(uint64_t vaddr);
+void kill_task(uint64_t pid);
+
 #endif

@@ -23,9 +23,13 @@ void exit(int status){
     syscall_1(SYS_exit, status);
 }
 
-void putChar(char c){
+int putChar(char c){
 	write(1, &c, 1);
 }
+
+/*char *gets(char *s){
+	syscall_1(SYS_gets, s);
+}*/
 /*
 ssize_t read(int fd, const void *buf, size_t count) { 
 	return syscall_3(SYS_read, fd, (uint64_t)buf, count);

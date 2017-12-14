@@ -6,10 +6,14 @@
 //#include <sys/idt.h>
 #include <sys/elf.h>
 #include <sys/tarfs.h>
+#include <sys/physmem.h>
 // end store the last struct
 task_struct* end;
 task_struct* first;
 task_struct* current;
+extern page_t* physical_page_start;
+extern page_t* free_pg_head;
+
 uint64_t last_thread;
 //tell which rsp to go when comes back from ring3
 uint64_t kernel_rsp;
@@ -1087,4 +1091,99 @@ void task_list(){
 		}
 		temp=temp->next;
 	}	
+}
+
+uint64_t sys_getppid(){
+	return current->ppid;
+}
+
+void kill_task(uint64_t pid){
+	task_struct *temp=current;
+	task_struct *prev=current;
+	task_struct *temp_parent;
+	//the task to kill
+	while(temp){
+		if(temp->pid==pid){
+			break;
+		}
+		temp=temp->next;
+		if(temp==current){//fails to find threadtask
+			return NULL;
+		}
+	}
+	//if has parent
+	if(temp->ppid){
+		temp_parent=get_task_by_pid(temp->ppid);
+		if(temp_parent->waitpid==temp->pid&&temp_parent->waitpid==-1){
+			temp_parent->waitpid=0;
+			temp_parent->state=READY;
+		}
+	}
+
+	while(prev){// find child
+		if(prev->ppid==temp->pid){
+			prev->ppid=0;
+		}
+		prev=prev->next;		
+		if(prev==current){//end of search 
+			break;
+		}
+	}	
+
+	// remove from the list
+	while(prev){// find the task prev to the killed task
+		if(prev->next==temp){
+			break;
+		}
+		prev=prev->next;		
+		if(prev==current){//fails to find the task
+			break;
+		}
+	}
+	if(temp->next==NULL){
+		//shutdown the os?
+		schedule();
+	}
+	else if(temp->next==prev){
+		//two tasks
+		prev->next=NULL; 
+	}
+	else{
+		prev->next=temp->next;
+	}
+
+	// free vma, unmap and free the memory
+	set_CR3(temp->cr3);
+	mm_struct *temp_mm=temp->mm;
+	vma_struct *vma_temp=temp_mm->mmap;
+	uint64_t vaddr_start,vaddr_end;
+	uint64_t vaddr;
+	while(vma_temp){
+		vaddr_start=vma_temp->start;
+		vaddr_end=vma_temp->end;
+		while(vaddr_start<vaddr_end){
+			freeVaddr(vaddr_start);
+			vaddr_start+=0x1000;
+		}
+		vma_temp=vma_temp->next;
+	}
+	freeVaddr(temp->mm);
+	freeVaddr(temp->kstack);
+	freeVaddr(temp);
+	set_CR3(current->cr3);
+}
+
+void freeVaddr(uint64_t vaddr){
+	//set_CR3(temp->cr3);
+	uint64_t phy=get_physical_addr_user(vaddr);
+	phy=phy&PERM_MASK;
+	//set_CR3(current->cr3);
+	uint64_t index=phy/1000;
+	page_t *page_tmp;
+	page_tmp=physical_page_start+index;
+	page_tmp->ref_ct=0;
+	page_tmp->occup=PG_FREE;
+	//memset()
+	page_tmp->next=free_pg_head->next;	
+	free_pg_head->next=page_tmp;
 }

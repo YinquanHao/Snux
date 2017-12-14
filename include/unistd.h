@@ -39,5 +39,9 @@ off_t lseek(int fd, off_t offset, int whence);
 
 // OPTIONAL: implement for ``signals and pipes (+10 pts)''
 int pipe(int pipefd[2]);
+void clear_screen();
+void ps();
+int cat(char *path);
+unsigned int sleep(unsigned int seconds);
 
 #endif

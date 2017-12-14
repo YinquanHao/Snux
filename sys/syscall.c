@@ -117,8 +117,27 @@ uint64_t syscall_handler(struct syscall_regs* regs){
             sys_sleep((uint64_t)regs->rdi);
             regs->rax=0;
             break;
+        case SYS_getppid:
+            regs->rax=sys_getppid();
+            break;
+        case SYS_clearscreen:
+            clear_terminal();
+            regs->rax=0;
+            break;
         case SYS_ps:
             task_list();
+            break;
+        case SYS_cat:
+            sys_cat((char*)regs->rdi);
+            break;
+        case SYS_readinput:
+            terminal_read((char*)regs->rsi,(int)regs->rdx);
+            break;
+        case SYS_gets:
+            getsline((char*)regs->rsi);
+            break;
+        case SYS_kill:
+            kill_task((uint64_t)regs->rsi);
             break;
 	}
 	return;
@@ -142,7 +161,8 @@ void syscall_compatible_mode(){
 uint64_t sys_brk(struct syscall_regs* regs){
 	int pages = regs->rdi;
 	//get current task's heap 
-	uint64_t addr = current->mm->brk;
+	//uint64_t addr = current->mm->brk;
+    uint64_t addr = current->mm->brk;
     //struct vm_struct *vma_ptr;
     struct mm_struct *mm_ptr = current->mm;
     uint64_t size;
@@ -493,8 +513,25 @@ int sys_listfiles(char *path) {
     return 0;
 }
 
-
-
+int sys_cat(char *path){
+    int temp_fd=sys_open(path,2);
+    uint64_t len_start=0;
+    uint64_t len_end =0;    
+    char res[100]={0};
+    if ((current->fd[temp_fd] != NULL) && (current->fd[temp_fd]->permission != O_WRONLY)) {
+         len_start = current->fd[temp_fd]->node->first;
+         len_end  = current->fd[temp_fd]->node->last;
+/*         if (len > (len_end - len_read))
+                len = len_end - len_read;
+         current->fd[fd_count]->current +=len;*/
+         memcpy((void *)res,(void *)len_start,len_end-len_start);
+         sys_close(temp_fd);
+         kprintf("\n%s",res);
+       return 1;
+     }
+     sys_close(temp_fd);
+     return -1; 
+}
 
 
 
