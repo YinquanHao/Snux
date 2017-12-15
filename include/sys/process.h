@@ -9,8 +9,8 @@
 #define STACK_VMA 3
 #define USER_STACK_TOP	 0x00000FFF7FFFE000UL
 #define USER_STACK_LIMIT 0x00000FFF7FF5EFFFUL //the lowest address of user stack 160pgs
-#define HEAP_START		 0x00000FFF80000000UL
-#define HEAP_LIMIT       0x00000FFF800A0000UL //the highest address of heap can reach 160pgs
+#define HEAP_START		 0x00000FFF00000000UL
+#define HEAP_LIMIT       0x00000FFF000A0000UL //the highest address of heap can reach 160pgs
 #define VMA_VA_ST        0x00000FFF800A1000UL
 //for tesing 
 #define heap_end  0x8000

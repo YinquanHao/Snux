@@ -4,8 +4,7 @@
 #include <sys/physmem.h>
 
 
-void page_fault_handler(struct regs *r)
-{
+void page_fault_handler(struct regs *r){
     //kprintf("enter page fault\n");
     //__asm__ __volatile__("xchg %bx, %bx");
     uint64_t error=r->err_code & 0xF;
@@ -68,7 +67,7 @@ void demand_paging(uint64_t vaddr){
     //cur_pml4=(pml4_t)((VIRT_ST)|((uint64_t) cur_pml4)); 
     while(vma!=NULL){
 
-        if(vma->type == HEAP && vaddr >= vma->start/* && vaddr + 0x1000<= HEAP_LIMIT*/){//heap
+        if(vma->type == HEAP && vaddr >= vma->start && vaddr + 0x1000<= HEAP_LIMIT){//heap
             kprintf("add heap");
             phy_page=allocate_page();
             pml4_addr=get_tb_virt_addr(PML4_LEVEL,vaddr);
@@ -78,7 +77,7 @@ void demand_paging(uint64_t vaddr){
             return;
         }
 
-        if(vma->type==STACK && vaddr<=vma->end && vma->end-0x1000>=USER_STACK_LIMIT){
+        if(vma->type==STACK && vaddr<=vma->end && vaddr-0x1000>=USER_STACK_LIMIT){
             kprintf("add stack");
             phy_page=allocate_page();
             pml4_addr=get_tb_virt_addr(PML4_LEVEL,vaddr);

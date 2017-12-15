@@ -255,7 +255,7 @@ task_struct* create_user_process(char* filename){
     //kprintf("the clo %d \n",clo);
     //char buf[100];
     //int read = sys_read(3,buf,100);
-
+    task->sleep_time=0;
    	//get the pid for the process
     int pid=get_pid();
     //set the pid
@@ -556,181 +556,6 @@ void __attribute__((optimize("O0"))) copy_child_table(task_struct *child){
     //while(1);
 }
 
-/*
-void __attribute__((optimize("O0"))) copy_child_table(task_struct *child){
-    //allocate the user_space and map it into vir_top
-    uint64_t phy_addr = user_space_allocate(child->vir_top);
-    //keep an copy of pml4_c physical address
-    uint64_t pml4_c_phy = phy_addr;
-    //make pml4_c points to child->vir_top
-    pml4_t pml4_c = (pml4_t)(child->vir_top);
-    //increment the vir_top as one pg size
-    child->vir_top+=PAGE_SIZE;
-    //enable self ref
-    pml4_c->PML4E[510] = phy_addr| PT_P;;
-    //get virtual address of parent's pml4
-    pml4_t pml4_p = get_tb_virt_addr(PML4_LEVEL,0);
-    //copy the kernel mem
-    pml4_c->PML4E[511] = pml4_p->PML4E[511];
-
-    child->cr3 = pml4_c_phy;
-
-
-    pdpt_t pdpt_c;
-    pdpt_t pdpt_p;
-    pdt_t pdt_p;
-    pdt_t pdt_c;
-    pt_t pt_p;
-    pt_t pt_c;
-    int i=0;
-    for(;i<510;i++){
-    	//if the entry of pml4_p presents
-    	uint64_t pml4_entry =pml4_p->PML4E[i];
-    	if(pml4_entry & PT_P){
-    		//allocate a new pdpt_c
-    		phy_addr = user_space_allocate(child->vir_top);
-    		//set pdpt_c to the entry
-    		pml4_c->PML4E[i] = phy_addr|PT_P|PT_U|PT_W;
-    		//get the pdpt_c virtual addr
-    		pdpt_c = (pdpt_t)(child->vir_top);
-    		//get pdpt_p's virtual addr
-    		pdpt_p = (pdpt_t)(PDPT_SELF|(uint64_t)i<<12);
-    		//increment the vir_top
-    		child->vir_top+=PAGE_SIZE;
-    		int j=0;
-    		for(;j<512;j++){
-    			uint64_t pdpt_entry = pdpt_p->PDPTE[j];
-    			//if the pdpt entry presents
-    			if(pdpt_entry & PT_P){
-    				//allocate a new space for pdt_c
-    				phy_addr = user_space_allocate(child->vir_top);
-    			
-    				pdpt_c->PDPTE[j] = phy_addr|PT_P|PT_U|PT_W;
-    				//get pdt_c's virtual address
-    				pdt_c = (pdt_t)(child->vir_top);
-    				//get virtual address of parent pdt
-    				pdt_p = (pdt_t)(uint64_t)(((uint64_t)i<<21)|((uint64_t)j<<12)|PDT_SELF);
-    				//increment the vir_top
-    				child->vir_top+=PAGE_SIZE;
-    				int k=0;
-    				for(;k<512;k++){
-    					//if the pdt entry presents
-    					uint64_t pdt_entry = pdt_p->PDTE[k];
-    					if(pdt_entry & PT_P){
-    						phy_addr = user_space_allocate(child->vir_top);
-    						//set pdt_c's entry as the physical address of pt_c
-    						pdt_c->PDTE[k] = phy_addr|PT_P|PT_U|PT_W;
-    						//get pt_c
-    						pt_c = (pt_t)(child->vir_top);
-    						//get parent's pt table
-    						pt_p = (pt_t)(((uint64_t)i<<30)|((uint64_t)j<<21)|((uint64_t)k<<12)|PT_SELF);
-    						//increment the vir_top
-    						child->vir_top+=PAGE_SIZE;
-    						int m=0;
-    						for(;m<512;m++){
-    							uint64_t pt_entry = pt_p->PTE[m];
-    							if(pt_entry & PT_P){
-    								//copy the value
-    								pt_entry = pt_entry&PERM_MASK;
-    								pt_entry = pt_entry|(uint64_t)PT_COW|(uint64_t)PT_P|(uint64_t)PT_U;
-    								pt_c->PTE[m] = pt_entry;
-    								pt_p->PTE[m] = pt_entry;
-    							}
-    						}
-    					}
-    				}
-    			}
-    		}
-    	}
-    }
-    set_CR3(pml4_c_phy);
-    //while(1);
-}
-
-*/
-
-
-
-/*
-void copy_child_mm(task_struct *child){
-	/
-
-	//set child's vir_top back to it's parents
-	//child->vir_top = current->vir_top;
-	//allocate an new user space
-	user_space_allocate(child->vir_top);
-	//make the new created user space points to child_mm
-	mm_struct *child_mm=(mm_struct*)(child->vir_top);
-	//increment the child process's vir_top
-	child->vir_top+=0x1000;
-	//set child->mm
-	child->mm=child_mm;
-	//get head of parent's vma
-	vma_struct *parent_vma=current->mm->mmap;
-	//create a pointer points to child_vma
-	vma_struct *child_vma=NULL;
-	//create a vma pointer as prev
-	vma_struct *prev;
-	//set is first flog
-	uint64_t is_first=1;
-	//set cr3 back to the cuurent->cr3 (Do we really need that?)
-	//set_CR3(current->cr3);
-	//memcpy the parent->mm
-	memcpy((void*)child->mm,(void*)current->mm,0x1000);
-	// if parent has vmas
-	while(parent_vma!=NULL){
-		//if this is the head of vma list
-		if(is_first==1){
-			//allocate a new user_space 
-			user_space_allocate(child->vir_top);
-			vma_struct *child_vma=(vma_struct*)(child->vir_top);
-			child->vir_top+=0x1000;
-			//copy the attributes lazy cpy here
-			child_vma->start=parent_vma->start;
-			child_vma->end=parent_vma->end;
-			child_vma->flags=parent_vma->flags;
-			child_vma->type=parent_vma->type;
-			if(parent_vma->file!=NULL){
-				user_space_allocate(child->vir_top);
-				struct file* child_vma_file =(vma_struct*)(child->vir_top);
-				child->vir_top+=0x1000;
-				memcpy(child_vma_file,parent_vma->file,sizeof(struct file));
-				child_vma->file = child_vma_file;
-			}
-			//set is_first flag back to 0
-			is_first=0;
-			//set mm_map
-
-			child->mm->mmap=child_vma;
-			child_vma->mm = child->mm;
-			//set prev
-			prev=child_vma;
-
-		}else{
-			user_space_allocate(child->vir_top);
-			vma_struct *child_vma=(vma_struct*)(child->vir_top);
-			child->vir_top+=0x1000;
-			child_vma->start=parent_vma->start;			
-			child_vma->end=parent_vma->end;
-			child_vma->flags=parent_vma->flags;
-			child_vma->type=parent_vma->type;
-			//link the vma list
-			if(parent_vma->file!=NULL){
-				user_space_allocate(child->vir_top);
-				struct file* child_vma_file =(vma_struct*)(child->vir_top);
-				child->vir_top+=0x1000;
-				memcpy(child_vma_file,parent_vma->file,sizeof(struct file));
-				child_vma->file = child_vma_file;
-			}
-			child_vma->mm = child->mm;
-			prev->next=child_vma;
-			prev=child_vma;
-		}
-		//iterator to parent's next_vma
-		parent_vma=parent_vma->next;
-	}
-	//while(1);
-}*/
 
 
 void copy_child_mm(task_struct *child){
@@ -780,8 +605,23 @@ void copy_child_mm(task_struct *child){
 				memcpy(child_vma_file,parent_vma->file,sizeof(struct file));
 				child_vma->file = child_vma_file;
 			}else if(parent_vma->type==STACK){
+
+				uint64_t size = (uint64_t)parent_vma->start - (uint64_t)parent_vma->end;
+
+				kprintf("enter stack vma copy 2 %d \n",size);
+
 				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->start-(uint64_t)parent_vma->end));
+
 			}else if(parent_vma->type==HEAP){
+
+				uint64_t size = parent_vma->end - parent_vma->start;
+				size = size/PAGE_SIZE;
+				while(size){
+					user_space_allocate(child->vir_top);
+					child->vir_top+=PAGE_SIZE;
+					size--;
+				}
+
 				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->end-(uint64_t)parent_vma->start));
 			}
 			//set is_first flag back to 0
@@ -819,8 +659,23 @@ void copy_child_mm(task_struct *child){
 				memcpy(child_vma_file,parent_vma->file,sizeof(struct file));
 				child_vma->file = child_vma_file;
 			}else if(parent_vma->type==STACK){
+				uint64_t size = (uint64_t)parent_vma->start-(uint64_t)parent_vma->end;
+
+				kprintf("enter stack vma copy 2 %d \n",size);
+
+
+
 				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->start-(uint64_t)parent_vma->end));
 			}else if(parent_vma->type==HEAP){
+
+				uint64_t size = parent_vma->end - parent_vma->start;
+				size = size/PAGE_SIZE;
+				while(size){
+					user_space_allocate(child->vir_top);
+					child->vir_top+=PAGE_SIZE;
+					size--;
+				}
+
 				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->end-(uint64_t)parent_vma->start));
 			}
 			child_vma->mm = child->mm;
@@ -875,109 +730,6 @@ void wake_up(task_struct* task){
 
 
 
-/*void __attribute__((optimize("O0"))) set_up_child_stack(task_struct* child){
-	uint64_t rax;
-	uint64_t rbx;
-	uint64_t rcx;
-	uint64_t rdx;
-	uint64_t rdi;
-	uint64_t rsi;
-	uint64_t rbp;
-	uint64_t r8;
-	uint64_t r9;
-	uint64_t r10;
-	uint64_t r11;
-	uint64_t r12;
-	uint64_t r13;
-	uint64_t r14;
-	uint64_t r15;
-	kprintf("enter this");
-	__asm__ __volatile__ (
-		"movq %%rax, %0;"	
-		"movq %%rbx, %1;"
-		"movq %%rcx, %2;"
-		"movq %%rdx, %3;"
-		"movq %%rdi, %4;"
-		"movq %%rsi, %5;"
-		"movq %%rbp, %6;"
-		"movq %%r8, %7;"
-		"movq %%r9, %8;"
-		"movq %%r10, %9;"
-		"movq %%r11, %10;"
-		"movq %%r12, %11;"
-		"movq %%r13, %12;"
-		"movq %%r14, %13;"
-		"movq %%r15, %14;"
-		:"=r"(rax),"=r"(rbx),"=r"(rcx),"=r"(rdx),"=r"(rdi),"=r"(rsi),"=r"(rbp),"=r"(r8),"=r"(r9),"=r"(r10),"=r"(r11),"=r"(r12),"=r"(r13),"=r"(r14),"=r"(r15)
-		);
-	child->rsp-=8;
-	uint64_t *child_rsp = child->rsp;
-	child_rsp = rax;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = rbx;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = rcx;
-	child->rsp-=8;
-
-
-
-	child_rsp = child->rsp;
-	*child_rsp = rdx;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = rdi;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = rsi;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = rbp;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = r8;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = r9;
-	child->rsp-=8;
-
-
-	child_rsp = child->rsp;
-	*child_rsp = r10;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = r11;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = r12;
-	child->rsp-=8;
-
-	child_rsp = child->rsp;
-	*child_rsp = r13;
-	child->rsp-=8;
-
-	
-	child_rsp = child->rsp;
-	*child_rsp = r14;
-	child->rsp-=8;
-	
-	child_rsp = child->rsp;
-	*child_rsp = r15;
-	child->rsp-=8;
-	//child_rsp-=8;
-}*/
-
-
 // setup child stack
 void set_up_child_stack(task_struct *child){
 	uint64_t parent_rsp;
@@ -1025,27 +777,32 @@ void set_up_child_stack(task_struct *child){
 
 
 
-void sys_sleep(uint64_t stime){
+void __attribute__((optimize("O0"))) sys_sleep(uint64_t stime){
 	current->state=SLEEPING;
 	//kprintf("%d\n",stime);
 	current->sleep_time=stime*1000;
 	if(current->next->pid==0||current->next==NULL){
-		while(current->sleep_time==0){
-			//kprintf("return");
-			return;
+		while(current->sleep_time>0){
+			//kprintf("%x",current->sleep_time);
+			//return;
 		}
+		kprintf("return");
+		return;
 	}
+
+	return;
 	//context_switch();
 	//kprintf("sl");
 	//kprintf(" %x %x ",current->pid,current->next->pid);
-	///schedule();
+	//schedule();
+	//return;
 }
 
 
 void clear_sleep(){
 	task_struct* temp=current;
 	while(temp){
-		if(temp->state==SLEEPING&&temp->sleep_time>=0){
+		if(temp->pid!=1&&temp->state==SLEEPING&&temp->sleep_time>=0){
 			//kprintf("%d",temp->sleep_time);
 			temp->sleep_time-=1000;
 			if(temp->sleep_time<=0){
@@ -1055,10 +812,8 @@ void clear_sleep(){
 			}						
 			//break;
 		}
-/*		else if(temp->next==current){
-			return ;
-		}*/
 		temp=temp->next;
+		//kprintf("%d",temp->pid);	
 		if(temp==current){return;}
 	}
 	return;
@@ -1084,8 +839,10 @@ void task_list(){
 		else if(temp->state==WAIT){
 			strcpy(res,"WAIT");
 		}		
-		
-		kprintf("\n%d|    %d|      %s|  %d",temp->pid,temp->ppid,res,temp->sleep_time);
+		else if(temp->state==ZOMBIE){
+			strcpy(res,"ZOMBIE");
+		}
+		kprintf("\n%d|    %d|      %s|      %d",temp->pid,temp->ppid,res,temp->sleep_time);
 		if(temp->next==current){
 			return ;
 		}
@@ -1094,6 +851,8 @@ void task_list(){
 }
 
 uint64_t sys_getppid(){
+	uint64_t tt2=allocate_page();
+	kprintf("alloc:%x",tt2);
 	return current->ppid;
 }
 
@@ -1101,14 +860,16 @@ void kill_task(uint64_t pid){
 	task_struct *temp=current;
 	task_struct *prev=current;
 	task_struct *temp_parent;
+	kprintf("%x",pid);
 	//the task to kill
 	while(temp){
 		if(temp->pid==pid){
 			break;
 		}
 		temp=temp->next;
-		if(temp==current){//fails to find threadtask
-			return NULL;
+		if(temp==current){//fails to find threa-1task
+			kprintf("not found");
+			return -1;
 		}
 	}
 	//if has parent
@@ -1142,7 +903,7 @@ void kill_task(uint64_t pid){
 	}
 	if(temp->next==NULL){
 		//shutdown the os?
-		schedule();
+		//schedule();
 	}
 	else if(temp->next==prev){
 		//two tasks
@@ -1153,7 +914,8 @@ void kill_task(uint64_t pid){
 	}
 
 	// free vma, unmap and free the memory
-	set_CR3(temp->cr3);
+	int tt=allocate_page();
+	//set_CR3(temp->cr3);
 	mm_struct *temp_mm=temp->mm;
 	vma_struct *vma_temp=temp_mm->mmap;
 	uint64_t vaddr_start,vaddr_end;
@@ -1171,6 +933,9 @@ void kill_task(uint64_t pid){
 	freeVaddr(temp->kstack);
 	freeVaddr(temp);
 	set_CR3(current->cr3);
+	//int tt2=allocate_page();
+	//kprintf("   %x   %x    \n",tt,tt2);
+	return 0;
 }
 
 void freeVaddr(uint64_t vaddr){
@@ -1178,12 +943,14 @@ void freeVaddr(uint64_t vaddr){
 	uint64_t phy=get_physical_addr_user(vaddr);
 	phy=phy&PERM_MASK;
 	//set_CR3(current->cr3);
-	uint64_t index=phy/1000;
+	uint64_t index=phy/0x1000;
+	//index=index-780;
 	page_t *page_tmp;
-	page_tmp=physical_page_start+index;
+	page_tmp=(page_t*)(physical_page_start)+index;
 	page_tmp->ref_ct=0;
 	page_tmp->occup=PG_FREE;
 	//memset()
 	page_tmp->next=free_pg_head->next;	
 	free_pg_head->next=page_tmp;
+	//kprintf(" free%x ",index);
 }

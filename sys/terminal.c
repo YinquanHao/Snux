@@ -10,6 +10,8 @@ int tx,ty;
 int enter_press=0;
 terminal* init_t;//init terminal
 char tbuffer[8][128]={0};
+char getsbuffer[128]={0};
+int cursorNum[8]={0,0,0,0,0,0,0,0};
 int tbufferNum=0;
 int cursor=0;
 int pre_cur=0;
@@ -72,6 +74,9 @@ uint64_t terminal_read(char *buf, int count) {
     	 memcpy((void*) buf, (void*)tbuffer[tbufferNum], count);
     	 res = count > cursor ? cursor : count;
        	 //cursor+=res;
+    	 strcpy(getsbuffer,tbuffer[tbufferNum]);
+    	 //tbuffer[tbufferNum][cursor+1]='\n';
+    	 cursorNum[tbufferNum]=cursor;
     	 enter_press=0;
     	 scan_flag=0;
     	 cursor=0;
@@ -98,13 +103,54 @@ uint64_t terminal_read(char *buf, int count) {
 
 uint64_t standard_input(char *buf,int count){
 	uint64_t res;
-	memcpy((void*) buf, (void*)tbuffer, count);
-	res = count > cursor ? cursor : count;
-	return res;
+	int i=0,j=0;
+	int count_temp=count;
+	int copied=0;
+	int cursor=0;
+/*	while(count_temp>0){
+		if(count_temp<=cursorNum[i]){
+			memcpy((void*) (buf+copied), (void*)(tbuffer+cursor), count_temp);
+			//kprintf("%x",count_temp);
+			copied+=count_temp;
+			kprintf("%d",copied);
+			return copied;
+		}
+		else{
+			if(cursorNum[i]==0){
+				kprintf("%d",copied);
+				return copied;
+			}
+			memcpy((void*) (buf+copied), (void*)(tbuffer+cursor), cursorNum[i]);
+
+			count_temp-=cursorNum[i];	
+			copied+=cursorNum[i];
+		}
+		i++;
+		cursor+=128;
+	}*/
+	while(count_temp>0){
+		if(cursorNum[j]==0){
+			break;
+		}
+		if(i==cursorNum[j]){
+			j++;
+			i=0;
+		}
+		buf[cursor]=tbuffer[j][i];
+		count_temp--;
+		cursor++;
+		i++;
+	}
+	//kprintf("%d,%d\n",cursor,cursorNum[0]);
+	return cursor;
+
+
 }
 
-uint64_t getsline(char* buf){
-	memcpy((void*) buf, (void*)tbuffer[tbufferNum], 128);
+uint64_t getsline(char *buf){
+	memcpy((void*) buf, (void*)getsbuffer,128);
+	//kprintf("%s",buf);
+	return 1;
 }
 
 

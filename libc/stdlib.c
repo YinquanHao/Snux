@@ -23,7 +23,7 @@ void exit(int status){
     syscall_1(SYS_exit, status);
 }
 
-int putChar(char c){
+int printchar(char c){
 	write(1, &c, 1);
 }
 

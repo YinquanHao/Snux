@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <sys/defs.h>
 #include <sys/virtualmem.h>
+#include <sys/process.h>
 #define UINT32_MAX 4294967295
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
@@ -89,12 +90,11 @@ void printWrapper(char* display_buf, const char* format, va_list args){
 
 
 void kprintf(const char *fmt, ...){
-	char buf[1024]={-1};
+	char buf[256]={0};
 	va_list args;
 	va_start(args, fmt);
 	printWrapper(buf,fmt,args);
 	va_end(args);
-	
 	unsigned short * textptr = (unsigned short *)(VGA_ADDR)+x+y*VGA_WIDTH;
 	unsigned char *c = (uint8_t *)buf;
 
@@ -148,6 +148,7 @@ void kprintf(const char *fmt, ...){
 		//TODO(@yinquanhao) add scroll functionality.
 
 	}
+	//freeVaddr(buf);
 }
 
 unsigned int strlen_a(const char* input){

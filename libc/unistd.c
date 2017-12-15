@@ -98,3 +98,7 @@ int read_input(int fd, void *buf, size_t count) {
 int kill(pid_t pid, int sig){
     return (int) syscall_2(SYS_kill,(uint64_t)pid,(uint64_t)sig);
 }
+
+pid_t getppid(){
+	return  (pid_t)syscall_0(SYS_getppid);
+}

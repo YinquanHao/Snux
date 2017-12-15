@@ -19,7 +19,7 @@ int printf(const char *format, ...){
 				case 'd':
 					i=va_arg(arg,int);
 					if(i<0){
-						putChar('-');
+						printchar('-');
 						i=-i;
 					}
 					len=intgerLength(i);
@@ -31,14 +31,13 @@ int printf(const char *format, ...){
 					break;
 				case 'c':
 					c=va_arg(arg,int);
-					putChar(c);
+					printchar(c);
 					break;
 				case 'x':
 					hex=va_arg(arg,long);
 					convertHex(hex);
 					break;
 				default:
-//putChar('e');
 					res=-1;
 					break;
 			}
@@ -46,7 +45,7 @@ int printf(const char *format, ...){
 			format++;
 		}
 		else{
-			putChar(*format);
+			printchar(*format);
 			format++;
 		}
 		if(res==-1){break;}
@@ -71,7 +70,7 @@ void convertInt(int num,int length){
 	buf[p]=num_temp;
 	int m=9-length;
 	while(m<9){
-		putChar(buf[m]+'0');
+		printchar(buf[m]+'0');
 		buf[m]=0;
 		m++;
 	}
@@ -105,7 +104,7 @@ void convertHex(long num){
 	convertStr("0x");
 	//convertStr(s);
 	for(int i=0;i<cnt;i++){
-		putChar(*s);		
+		printchar(*s);		
 		*s=0;
 		s++;
 	}
@@ -119,7 +118,7 @@ void convertHex(long num){
 
 void convertStr(char* str){
 	while(*str!='\0'){
-		putChar(*str);
+		printchar(*str);
 		str++;
 	}
 
@@ -153,7 +152,7 @@ unsigned long toInt(const char* str)
 }
 
 char *gets(char *s){
-	syscall_1(SYS_gets,(uint64_t)s);
+	syscall_1(SYS_gets,s);
 	return s;
 }
 
@@ -165,4 +164,8 @@ void *memset(void *s, int ch , unsigned long n) {
         n--;
     }
     return s;
+}
+
+int puts(const char *s){
+	printf("%s", s);
 }

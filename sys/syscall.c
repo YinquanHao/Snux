@@ -134,10 +134,10 @@ uint64_t syscall_handler(struct syscall_regs* regs){
             terminal_read((char*)regs->rsi,(int)regs->rdx);
             break;
         case SYS_gets:
-            getsline((char*)regs->rsi);
+            getsline((char*)regs->rdi);
             break;
         case SYS_kill:
-            kill_task((uint64_t)regs->rsi);
+            kill_task((uint64_t)regs->rdi);
             break;
 	}
 	return;
@@ -318,12 +318,12 @@ int sys_read(uint64_t fd_count,uint64_t addr,uint64_t len)
         //uint64_t count;
 
 //      struct task_struct *current_task = current;
-        /*
-        if (fd_count == stdin) {
-            count = scanf_stdin((void *)addr,len);//define it
+        
+        if (fd_count == 0) {
+            uint64_t count = standard_input((void *)addr,len);//define it
              return count;
         }
-		*/
+		
        if ((current->fd[fd_count] != NULL) && (current->fd[fd_count]->permission != O_WRONLY)) {
          len_read = current->fd[fd_count]->current;
          len_end  = current->fd[fd_count]->node->last;
