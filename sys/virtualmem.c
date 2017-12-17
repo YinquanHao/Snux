@@ -99,32 +99,6 @@ uint64_t get_physical_addr_user(uint64_t vaddr){
     return pt_entry;
 }
 
-/*
-uint64_t get_tb_virtual_addr(uint64_t level, uint64_t entry_belong_to){
-    uint64_t vir_addr_res;
-
-
-    switch(level){
-        case PML4_LEVEL:
-            vir_addr_res = PML4_SELF;
-            break;
-        case PDPT_LEVEL:
-            entry_belong_to = entry_belong_to<<12;
-            vir_addr_res = (PDPT_SELF|entry_belong_to);
-            break;
-        case PDT_LEVEL:
-            entry_belong_to = 511<<21;
-            entry_belong_to = entry_belong_to|(510<<12);
-            vir_addr_res = (PDT_SELF|entry_belong_to);
-            break;
-        default:
-            vir_addr_res = 0x0;
-    }
-
-    return vir_addr_res;
-
-}
-*/
 uint64_t get_tb_virt_addr(uint64_t level, uint64_t virt_addr){
     uint64_t vir_addr_res;
     uint64_t pml4_index = (((virt_addr) >> 39) & 0x1FF);
@@ -327,26 +301,6 @@ void user_process_mapping_v2(uint64_t vir_addr, uint64_t phy_addr, pml4_t user_P
     page_entry=page_entry|PT_P|PT_U|PT_W; //set the page table flags
     pt_tab->PTE[page_tb_index]=page_entry;
 }
-
-/*
-uint64_t allocate_vir_page(uint64_t vaddr,uint64_t flags){ 
-    uint64_t phy_page=allocate_page();   //allocate physcial page
-    pml4_t cur_pml4=(pml4_t)get_CR3();
-    set_CR3(cur_pml4);
-    cur_pml4=(pml4_t)((VIRT_ST)|((uint64_t) cur_pml4));  // get current cr3
-    user_process_mapping(vir_copy,phy_page,cur_pml4,0); //map a virtual page to the free physical page
-    memset(vir_copy,0,4096);
-    uint64_t phy_addr=get_physical_addr(vaddr);
-    phy_addr=phy_addr&PERM_MASK;
-    memcpy((void*)vir_copy,(void*)vaddr,4096);
-    user_process_mapping(vaddr,phy_addr,cur_pml4,0);
-    vir_copy=vir_copy+0x1000;
-    //kprintf("%x",test);
-    //kprintf("%x",phy_page);
-    return 0;
-}
-*/
-
 
 /*returned a physical address for allocated one page size*/
 void* kmalloc(int flag, unsigned int size){

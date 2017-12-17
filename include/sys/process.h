@@ -120,5 +120,7 @@ void clear_sleep();
 void task_list();
 void freeVaddr(uint64_t vaddr);
 void kill_task(uint64_t pid);
-
+void schedule();
+void background(int pid);
+int sys_wait(uint64_t* status);
 #endif

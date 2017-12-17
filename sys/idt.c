@@ -1,22 +1,6 @@
 #include <sys/idt.h>
 #include <sys/pic.h>
 #include <sys/kprintf.h>
-/*struct idt_entry
-{
-    uint16_t offset_1; // offset bits 0..15
-    uint16_t selector; // a code segment selector in GDT or LDT
-    uint8_t ist;       // bits 0..2 holds Interrupt Stack Table offset, rest of bits zero.
-    uint8_t type_attr; // type and attributes (flag)
-    uint16_t offset_2; // offset bits 16..31
-    uint32_t offset_3; // offset bits 32..63
-    uint32_t zero;     // reserved
-} __attribute__((packed));
-
-struct idt_ptr
-{
-    uint16_t limit;
-    uint64_t base;
-} __attribute__((packed));*/
 
 struct idt_entry idt[256];
 

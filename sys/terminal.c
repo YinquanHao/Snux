@@ -44,29 +44,6 @@ uint64_t terminal_write(int fd, char *buf, int count){
 	return len;
 }
 
-//stdin
-/*uint64_t terminal_read(char *buf, int count) {
-	uint64_t res;    
-    if(scan_flag==1&&enter_press==1){
-    	 //kprintf("%x %x",t_current,tbuffer);
-    	 memcpy((void*) buf, (void*)tbuffer, count);
-    	 res = count > cursor ? cursor : count;
-    	 cursor=0;
-    	 enter_press=0;
-    	 scan_flag=0;
-    	 clear_tbuffer();
-    }
-    else if(scan_flag==0&&enter_press==1){//only 
-    	enter_press=0;
-    	res=0;
-    	tbuffer[cursor]=0;
-		cursor--;
-    }
-    else{
-    	res=0;
-    }
-    return res;
-}*/
 uint64_t terminal_read(char *buf, int count) {
 	uint64_t res;    
     if(scan_flag==1&&enter_press==1){
@@ -107,27 +84,6 @@ uint64_t standard_input(char *buf,int count){
 	int count_temp=count;
 	int copied=0;
 	int cursor=0;
-/*	while(count_temp>0){
-		if(count_temp<=cursorNum[i]){
-			memcpy((void*) (buf+copied), (void*)(tbuffer+cursor), count_temp);
-			//kprintf("%x",count_temp);
-			copied+=count_temp;
-			kprintf("%d",copied);
-			return copied;
-		}
-		else{
-			if(cursorNum[i]==0){
-				kprintf("%d",copied);
-				return copied;
-			}
-			memcpy((void*) (buf+copied), (void*)(tbuffer+cursor), cursorNum[i]);
-
-			count_temp-=cursorNum[i];	
-			copied+=cursorNum[i];
-		}
-		i++;
-		cursor+=128;
-	}*/
 	while(count_temp>0){
 		if(cursorNum[j]==0){
 			break;
@@ -141,7 +97,6 @@ uint64_t standard_input(char *buf,int count){
 		cursor++;
 		i++;
 	}
-	//kprintf("%d,%d\n",cursor,cursorNum[0]);
 	return cursor;
 
 
@@ -176,29 +131,8 @@ void terminal_input(char input_state,char input_char){
 			c++;
 			ty++;
 			tx=0;
-			enter_press=1;
-
-
-/*s*/
-			//excute
-			//cursor=0;
-			//memset(&tbuffer[0],0,100);
-			//break;			
+			enter_press=1;		
 		}
-/*		else if(*c=='1'){
-			kprintf("xxxxx");
-			*textptr++ = *c|0xF1<<8;
-			c++;
-			tx++;
-			break;
-			//break;
-		}*/
-/*		else if(*c=='2'){
-			char *a="111";
-			terminal_read(a,10);
-			kprintf("%s",a);
-			break;
-		}*/
 		else if(*c=='\b'){//backspace
 			backspace(textptr);
 			break;

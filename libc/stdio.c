@@ -169,3 +169,8 @@ void *memset(void *s, int ch , unsigned long n) {
 int puts(const char *s){
 	printf("%s", s);
 }
+
+
+int putchar(int c){
+	write(1, &c, 1);
+}

@@ -43,5 +43,5 @@ void clear_screen();
 void ps();
 int cat(char *path);
 unsigned int sleep(unsigned int seconds);
-
+void background(int pid);
 #endif

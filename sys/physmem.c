@@ -5,16 +5,6 @@
  
 extern page_t* physical_page_start;
 extern page_t* free_pg_head;
-//page_t* physical_page_start;
-//page_t* free_pg_head;
-
-//get the start of physical mem that can be used my free_pg_head
-/*unsigned long  get_kmalloc_base(unsigned long physfree, unsigned long smap_base) {
-	//phyfree>>12 -> get num of pages total below physfreee
-	physfree = (physfree>>12)+((physfree-smap_base)>>12);
-	return physfree<<12;
-}*/
-
 /*
 get the first free page and allocate it.
 @return:

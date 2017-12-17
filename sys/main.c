@@ -78,21 +78,6 @@ used_page=used_page+256;
 init_phy(used_page,0,page_total_number);
 
 
-
-//kprintf("page_total_number %d",page_total_number);
-//terminal_init();
-//int pageNum=get_free_pg(free_pg_head);
-
-
-//init_phy_page(8192, page_num, page_index);
-
-//kprintf("pageNum:%d",pageNum);
-//kprintf("used page:%d\n",used_page);
-//kprintf("total:%d\n",page_total_number);
-//kprintf("start:%p,%d",physical_page_start,sizeof(physical_page_start));
-
-
-
 kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 kprintf("physbase %p\n", (uint64_t)physbase);
 kprintf("physfree %p\n", (uint64_t)physfree);

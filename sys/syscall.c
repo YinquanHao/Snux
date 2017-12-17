@@ -139,6 +139,15 @@ uint64_t syscall_handler(struct syscall_regs* regs){
         case SYS_kill:
             kill_task((uint64_t)regs->rdi);
             break;
+        case SYS_bg:
+            background((int)regs->rdi);
+            break;
+        case SYS_unlink:
+            regs->rax=sys_unlink((char*)regs->rdi);
+            break;
+        case SYS_wait:
+            regs->rax=sys_wait(regs->rdi);
+            break;
 	}
 	return;
 }
@@ -170,7 +179,6 @@ uint64_t sys_brk(struct syscall_regs* regs){
     mm_ptr->brk +=size;
     mm_ptr->end_data +=size;
     mm_ptr->total_vm   +=size;
-    kprintf("addr %x", addr);
     regs->rax = addr;
     return addr;
 }
@@ -185,8 +193,13 @@ DIR* sys_opendir(char *path){
     //copy path name to the dirent
     strcpy(name,path);
     name = strtok(name,"/");
-    kprintf("path  %s \n",name);
-	if (name != NULL) {
+    //kprintf("path  %s \n",name);
+    if(name==NULL){
+        return (DIR *)NULL;
+    }
+	
+
+    if (name != NULL) {
 		// if the name is either "." or ".." means stay on root dirent
 		if ((strcmp(name,".") == 0)||(strcmp(name,"..") == 0)){ 
 			//set the node at the current dirent of the user task
@@ -218,11 +231,9 @@ DIR* sys_opendir(char *path){
         name = strtok(NULL,"/");
     }
     if (node->type == DIRECTORY) {
-    	//kprintf("enter this");
     	DIR* res = (DIR *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
     	res->node = node;
     	res->current = 2;
-    	//kprintf("res->current %x \n",res->current);
         return res;
     }
     //it's a file not a directory
@@ -266,14 +277,14 @@ int sys_open(char *path, uint64_t flag ){
     node = root;
 	dirpath = (char *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));;
     strcpy(dirpath,path);
-    name = strtok(dirpath,"/"); /* get the first token */
+    name = strtok(dirpath,"/");
     if (name == NULL){
     	return -1;
     }
     if (strcmp(name, "rootfs") == 0) {
         while ( name !=NULL ) {
         node_temp = node;
-        if (strcmp(name,".") == 0 ) { /* logic to detect dot notation in addresing */
+        if (strcmp(name,".") == 0 ) {
             node = node->child[0];
         }else if (strcmp(name,"..") == 0) {
             node = node->child[1];
@@ -505,10 +516,13 @@ int sys_listfiles(char *path) {
     char a[100] = { 0 };
     strcpy(a,path);
     DIR *c = sys_opendir(a);
+    if(c==NULL){
+        kprintf("open dir fail");
+        return -1;
+    }
     dirent *dir;
     while ((dir = sys_readdir(c)) != NULL){
        kprintf("%s  ",dir->d_name);
-       // sys_write(1,dir->d_name,strlen(dir->d_name));
     }
     return 0;
 }
@@ -516,110 +530,109 @@ int sys_listfiles(char *path) {
 int sys_cat(char *path){
     int temp_fd=sys_open(path,2);
     uint64_t len_start=0;
-    uint64_t len_end =0;    
-    char res[100]={0};
+    uint64_t len_end =0;
+
+    char *res=get_vir_from_phy(kmalloc(KERNAL_MEM,1));
+    //char res[1024]={0};
     if ((current->fd[temp_fd] != NULL) && (current->fd[temp_fd]->permission != O_WRONLY)) {
          len_start = current->fd[temp_fd]->node->first;
          len_end  = current->fd[temp_fd]->node->last;
-/*         if (len > (len_end - len_read))
-                len = len_end - len_read;
-         current->fd[fd_count]->current +=len;*/
-         memcpy((void *)res,(void *)len_start,len_end-len_start);
+         uint64_t len=len_end-len_start;
+         //kprintf("%d\n",len_end-len_start);
+         if((len_end-len_start)>1000){
+            len=1000;
+         }
+         memcpy((void *)res,(void *)len_start,1000);
+         while(len){
+            char *str=get_vir_from_phy(kmalloc(KERNAL_MEM,1));
+            *(str+256)='\0';
+            if(len<256){
+                memcpy((void *)str,(void *)res,len);
+                kprintf("%s",str);
+                len=0;
+                break;
+            }
+            else{
+                memcpy((void *)str,(void *)res,256);
+                kprintf("%s",str);
+            }
+            len-=256;
+            res+=256;
+         }
          sys_close(temp_fd);
-         kprintf("\n%s",res);
        return 1;
      }
      sys_close(temp_fd);
      return -1; 
 }
-
-
-
-
-
-
-
-
-/*
-char *print_node(file_t *p_node){
-        char node_buf[10][30];
-//      char buffer[100];
-        int index = 0;
-        int buf_i = 0;
-        char *str = buffer;
-        bzero(node_buf,300);
-
-        file_t *node = p_node;
-        if (node == NULL)
-                return (char *)NULL;
-        while (node != root) {
-        strcpy(node_buf[index],node->name);
-        index++;
-        node = node->child[1];
-        }
-
-        while (index >=0)
-        {
-                while( node_buf[index][buf_i] != '\0')
-                {
-                        *str = node_buf[index][buf_i];
-                        buf_i++;
-                        str++;
-                }
-
-                buf_i = 0;
-                index--;
-                if (index >= 0)
-                        *str++ = '/';
-        }
-        str++;
-        *str = '\0';
-        return buffer;
-}*/
-
-/*
-int sys_catfiles(char *filename,int pipe){
-	// if the filename == NULL return -1;
-	if(filename == NULL)
-		return -1;
-	//create a buffer
-	char buf[128] = {0};
-
-    if (pipe == RD_PIPE){
-        //printf("%s \n",pipe_buffer);
-	print_catfiles(pipe_buffer);
-    } else if (pipe == WR_PIPE || pipe == NO_PIPE){
-        bzero(pipe_buffer,4096);
-	int fd1;
-	fd1 = sys_open(a,O_RDWR);
-	if (fd1 != -1)
-		sys_read((uint64_t)fd1,(uint64_t)pipe_buffer,4096);
-	else { 
-
-		dir *file = sys_opendir(path);
-		if (file) {
-			printf("cat : %s is a directory \n",path);
-		} else {
-			printf("incorrect file name \n");
-		}
-		return 0;
-	}
-	if (pipe == NO_PIPE){
-		print_catfiles(pipe_buffer);
-		printf("\n");	
-		//printf("%s \n",pipe_buffer);
-	}
+int sys_unlink(char* pathname){
+    if(pathname==NULL){// invalid name
+        return -1;
     }
-    return 0;
-}
-*/
+    file_t *node;
+    file_t *node_temp;
+    char *name;
+    char *dirpath;
+    int i=0;
+    int count = 2;
+    struct fd *fd1 = (struct fd*)get_vir_from_phy(kmalloc(KERNAL_MEM,1));
+    node = root;
+    dirpath = (char *)get_vir_from_phy(kmalloc(KERNAL_MEM,1));;
+    strcpy(dirpath,pathname);
+    name = strtok(dirpath,"/");
+    if (name == NULL){
+      return -1;
+    }
+    if (strcmp(name, "rootfs") == 0) {
+        while ( name !=NULL ) {
+            node_temp = node;
+            if (strcmp(name,".") == 0 ) {
+                node = node->child[0];
+            }
+            else if (strcmp(name,"..") == 0) {
+                node = node->child[1];
+            }
+            else{
+                for (i=2; i < node->last ; i++) {
+                    if (strcmp(name,node->child[i]->name) == 0) {
+                        node = (file_t *)node->child[i];
+                            break;
+                    }
+                }
+            }
+            if (i >= node_temp->last){return -1;}
+            name = strtok(NULL,"/");
+        }
+            if(node->type==FILE){
+            task_struct* temp=current;
+            int fd_used=0;
+            while(temp){
+                for(i=0;i<100;i++){  
 
-//print by line by tokenize the input string by "/n"
-void print_by_line(char* input){
-	char *tok;
-	tok = strtok(input,"\n");
-	while (input != NULL){
-		kprintf("%s \n",tok);
-		tok = strtok(NULL,"\n");
-	}
+                    if(temp->fd[i]!=NULL){
+                        if(temp->fd[i]->inode_no==node->inode_no)
+                        {
+                            fd_used=1;
+                            break;
+                        }
+                    }
+                }
+                temp=temp->next;
+                if(temp==current||fd_used==1){
+                    break;
+                }
+            }
+            if(fd_used==0){
+                //kprintf("fdd%d\n",fd_used);
+                freeVaddr(node);
+                return 1;
+            }
+            else if(fd_used==1){// the file is open by other process
+                return -1;
+            }
+
+        }
+    }
+    return -1;
+
 }

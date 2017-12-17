@@ -32,6 +32,9 @@
 #define SYS_readinput   114
 #define SYS_kill		115
 #define SYS_gets 		116
+#define SYS_bg			117
+#define SYS_unlink      87
+#define SYS_wait        118
 #define O_RDONLY  		0
 #define O_WRONLY		1
 
@@ -55,4 +58,6 @@ int sys_execve(char *filename, char **argv, char **envp);
 uint64_t sys_fork();
 uint64_t syscall_wait4();
 int sys_cat(char *path);
+int sys_unlink(char* pathname);
+
 #endif

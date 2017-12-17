@@ -1,6 +1,6 @@
 #!sbush
 echo aaa bbb
-ps
+ps 
 cat rootfs/aaa.txt
-sleep 3
-ls
+rootfs/s2.sh
+sleep &

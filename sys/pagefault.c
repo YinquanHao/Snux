@@ -22,18 +22,10 @@ void page_fault_handler(struct regs *r){
                 set_pdpte_bits(vaddr,PT_W);
                 set_pdte_bits(vaddr,PT_W);
                 set_pte_bits(vaddr,PT_W);
-            }
-            else{//allocate copy
+            }else{//allocate copy
                 uint64_t vir_copy;
                 task_struct *task = get_current_task();
                 vma_struct *vma=task->mm->mmap;
-/*                while(vma->type!=HEAP_VMA&&vma!=NULL){
-                    vma=vma->next;
-                }
-                if(vma->end+0x1000<HEAP_LIMIT){
-                    vir_copy=vma->end;
-                    vma->end+=0x01000;
-                }*/
                 vir_copy=task->vir_top;
                 user_space_allocate(vir_copy);
                 task->vir_top+=0x1000;
@@ -51,11 +43,7 @@ void page_fault_handler(struct regs *r){
         }
     }else{//demand page
         demand_paging(vaddr);
-        //kprintf("finished demand");
     }
-    //kprintf("page fault handler error code %x",error);
-    //while(1);
-
 }
 
 void demand_paging(uint64_t vaddr){
@@ -63,12 +51,10 @@ void demand_paging(uint64_t vaddr){
     task_struct *task = get_current_task();
     vma_struct *vma=task->mm->mmap;
     uint64_t pml4_addr;
-    //pml4_t cur_pml4=(pml4_t)get_CR3();
-    //cur_pml4=(pml4_t)((VIRT_ST)|((uint64_t) cur_pml4)); 
     while(vma!=NULL){
 
         if(vma->type == HEAP && vaddr >= vma->start && vaddr + 0x1000<= HEAP_LIMIT){//heap
-            kprintf("add heap");
+            //kprintf("add heap");
             phy_page=allocate_page();
             pml4_addr=get_tb_virt_addr(PML4_LEVEL,vaddr);
             user_process_mapping(vaddr,phy_page,pml4_addr,0);
@@ -78,7 +64,7 @@ void demand_paging(uint64_t vaddr){
         }
 
         if(vma->type==STACK && vaddr<=vma->end && vaddr-0x1000>=USER_STACK_LIMIT){
-            kprintf("add stack");
+            //kprintf("add stack");
             phy_page=allocate_page();
             pml4_addr=get_tb_virt_addr(PML4_LEVEL,vaddr);
             user_process_mapping(vaddr-0x1000,phy_page,pml4_addr,0);
@@ -89,4 +75,5 @@ void demand_paging(uint64_t vaddr){
 
         vma=vma->next;
     }
+    sys_exit(0);
 }

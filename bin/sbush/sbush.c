@@ -1,103 +1,84 @@
 #include <stdio.h>
 //#include <string.h>
 #include <stdlib.h>
-//#include  <unistd.h>
-#define MAX_INPUT 1024
-#define MAX_ARGUMENT 256
-#define RUNASBG 1
-#define RUNNONBG 0
-#define O_RDONLY	     00
+#include  <unistd.h>
+#define MAX_INPUT       1024
+#define MAX_ARGUMENT     256
+#define RUNASBG            1
+#define RUNNONBG           0
+#define O_RDONLY	        00
 
 /*store the path variable*/
 char PATH[MAX_INPUT];
 /*store ps1 variable*/
 char PS1[MAX_INPUT];
 
+char CWD[MAX_INPUT];
+
+int bgflag=0;
+
 int read_command(char* buf);
-//void getBoudleDir(char* buff);
 void cmdStrip(char* cmdBuffer, char* modify);
-//void setPath(char* path, char* pathval);
-//void initPath(char* path, char* boundleDir);
 int cmdParser(char* cmd, char* tokens[]);
 int containBGSign(char* cmd);
 int containSlash(char* filename);
 void getEnv(char** environ,char* PATH);
-//void setPS1(char* PS1, char* in);
-//void renewPromort(char* promptBuff,char* prompt,char* brac);
-//char* findBin(char* path, char* boundleDir, char* name);
-//void exebin(char* tokens[], int asBG,char** environ);
 void getAbsPath(char* cwdPath, char* fileName, char* absPath);
 int isAbsPath(char* path);
 void exeScript(char* fileName,char* cwd,int argc, char* argv[], char* envp[]);
 void tokenize(char** tokens, char* cmd);
 int tokenParse(char* token, int BG);
-//int containPipe(char* filename);
-//int splitPipe(char* cmd, char* pipecmds[]);
-//void exebinPipe(char* cmds[], int asBG, int argc, char* boundleDir,char** envp);
-//void exepipcmd(char* cmd, int in, int out, char* boundleDir,char** envp);
-
-
 void cd(char *dir);
 
 int main(int argc, char* argv[], char* envp[]) {
-	//setPS1(PS1,"sbush");
 	char* cmd = (char*) malloc(MAX_INPUT);
-	//char* promptBuff = (char*) malloc(MAX_INPUT);
 	char *cursor = (char*)malloc(MAX_INPUT);
-//	while(1);
-  //getcwd(promptBuff,MAX_INPUT);
   char* tokens[10]={0};
   char *args[5];
   char temp[3];
-  	/*cwd buffer*/
-  //char* boundleDir = (char*) malloc(MAX_INPUT);
-  	/*get cwd and store in buffer*/
-  //getcwd(boundleDir,MAX_INPUT);
- 	//getBoudleDir(boundleDir);
-  /* where to store cwd*/
   char* cwd = malloc(MAX_INPUT);
 	int isFinished = 0;
 	clear_screen();	
   int status=0;
 
-printf("into the sbush\n");	
+printf("50 pt project\n"); 
+printf("(1) cd: change work directory   ex: cd /rootfs\n");
+printf("(2) pwd: print current working directory  ex: pwd\n");
+printf("(3) clear: clear the print  ex: clear \n");
+printf("(4) script.sh: execute the script. Need absolute path   ex: /rootfs/script.sh\n");
+printf("(5) echo var: print the vars in terminal  ex: echo abc def\n");
+printf("(6) ls: list in current directory ex: ls\n");
+printf("(7) cat var1: print content of the file, need absolute path  ex: cat /rootfs/aaa.txt\n  ");
+printf("(8) sleep var1 : sleep the given time  ex sleep 2\n ");
+printf("(9) ps : print the process status  ex: ps\n");
+printf("(10) kill var1: kill the process with given id ex: kill 4\n");
+printf("(11) &: run in background ex &test  \n");
+printf("(12) test command can test all functions in inculde *.h ex:test \n");
+printf("(13) BUG!!!! too many times of fork may cause crash \n");
   while (!isFinished) {
-		
-    memset(cwd,0,1024);
+    memset(cwd,0,MAX_INPUT);
+    getcwd(cwd,MAX_INPUT);
 		if(read_command(cursor)<=0){
 			continue;
 		}
-    //printf("%s",prompt);
 		cmdStrip(cursor, cmd);
-		//printf("%s",cmd);
-    //while(1);
     int cmdID = cmdParser(cmd,tokens);
-/*    if(containPipe(cmdPipeCpy)){
-      cmdID = 5;
-    }*/
-    
-/*    if(cmdID==1){
-      if(tokens[2]!=NULL){      
-        setPath(PATH, tokens[2]);}
-	    }*/
       if(cmdID==2){
-            //fprintf(stderr,"cd1 path %s",tokens[1]);
-        cd(tokens[1]);
-        //getcwd(cwd,MAX_INPUT);
-        //renewPromort(promptBuff,prompt,brac);
+        if(isAbsPath(tokens[1])==1){
+          cd(tokens[1]);
+        }else{
+          char* absPath = malloc(MAX_INPUT);
+          getAbsPath(cwd,tokens[1],absPath);
+          cd(absPath);
+          free(absPath);
+        }
+        getcwd(cwd,MAX_INPUT);
+        printf("%s\n", cwd);
       }
       else if(cmdID==3){
    	    char* fileName = tokens[0];
-        char* absPath = malloc(MAX_INPUT);
-        if(isAbsPath(fileName)==0){
-       //fprintf(stderr, "not a  absPath");
-          getAbsPath(cwd,tokens[0],absPath);
-       //fprintf(stderr, "the abs path %s\n", absPath);
-          fileName = absPath;
-        }
-	      exeScript(fileName,cwd,argc,argv,envp);
-     //exeScripta(fileName,boundleDir);
-        free(absPath);
+	      printf("exescript");
+        exeScript(fileName,cwd,argc,argv,envp);
       }
       else if(cmdID==8){
         clear_screen();
@@ -107,22 +88,25 @@ printf("into the sbush\n");
         printf("%s\n", cwd);
       }
       else if(cmdID==11){
-/*        if(tokens[1]==NULL){
-          printf("no input time\n");
-        }
-        else{
-          int input =toInt(tokens[1]);
-          sleep(input);
-        }*/
+      if(tokens[1]){  
         int p=fork();
         args[0]=tokens[1];
         args[1]=tokens[1];
-
         if(p){
-            waitpid(2,&status);
+            if(bgflag==1){
+                bgflag=0;
+                background(p);
+            }
+            else{
+              waitpid(p,&status);
+            }
         }
         else{
             execvpe("bin/sleep",args,envp);
+          }
+        }
+        else{
+          printf("time needed");
         }
       }
       else if(cmdID==12){ 
@@ -134,48 +118,86 @@ printf("into the sbush\n");
           args[0]=tokens[1];
           args[1]="0";
           if(p){
-            waitpid(2,&status);
-          }
-          else{
+            if(bgflag==1){
+                bgflag=0;
+                background(p);
+            }else{
+              waitpid(p,&status);
+            }
+          }else{
             execvpe("bin/cat",args,envp);
           }
       }
-        //cat(tokens[1]);
       }
       else if(cmdID==13){
-        int p=fork();
-        if(p){
-            waitpid(2,&status);
+        getcwd(cwd,100);
+        cd(cwd);
+        if(tokens[1]){
+          args[0]=cwd;
+          args[1]=tokens[1];
+          args[2]="0";
         }
         else{
-            execvpe("bin/ls",argv,envp);
+          args[0]=cwd;
+          args[1]="0";
+          args[2]="0";  
+        }
+        int p=fork();
+        if(p){
+            if(bgflag==1){
+              bgflag=0;
+              background(p);
+            }
+            else{
+              waitpid(p,&status);
+            }
+        }
+        else{
+            execvpe("bin/ls",args,envp);
         }
         printf("\n");
       }
       else if(cmdID==14){
+        if(tokens[1]){
         args[0]=tokens[1];
         args[1]="0";
         args[2]="0";
         int p=fork();
         if(p){
-            waitpid(2,&status);
+            if(bgflag==1){
+                bgflag=0;
+                background(p);
+            }
+            else{
+              waitpid(2,&status);
+            }
         }
         else{
             execvpe("bin/kill",args,envp);
+        }
+      }
+      else{
+          printf("pid needed");
         }
       }
       else if(cmdID==15){
         //ps();
         int p=fork();
         if(p){
-            waitpid(2,&status);
+            if(bgflag==1){
+                bgflag=0;
+                background(p);
+            }
+            else{
+              waitpid(p,&status);
+            }
         }
         else{
             execvpe("bin/ps",argv,envp);
         }
       }
       else if(cmdID==16){
-        if(tokens[1]==NULL){//nothing to echo
+        if(tokens[1]==NULL){
           continue;
         }
         int i=1;
@@ -186,11 +208,16 @@ printf("into the sbush\n");
         temp[0]=i+'0';
         temp[1]='\0';
         args[0]=temp;
-        printf("%s",args[0]);
         args[i]="0";
         int p=fork();
         if(p){
-            waitpid(2,&status);
+            if(bgflag==1){
+                bgflag=0;
+                background(p);
+            }
+            else{
+              waitpid(p,&status);
+            }
         }
         else{
             execvpe("bin/echo",args,envp);
@@ -198,23 +225,17 @@ printf("into the sbush\n");
       }      
       else if(cmdID==10){
         printf("not found command\n");
-/*        tokens[0] = findBin(PATH,boundleDir,tokens[0]);
-        exebin(tokens,RUNNONBG,envp);*/
       }
       else{
         //printf("not found command\n");
       }
-    //printf("%x",cmdID);
-
 	}
 }
 
 int read_command(char* buf){
 	memset(buf,0,MAX_INPUT);	
-	int res=read_input(0,buf,63/*MAX_INPUT-1*/);
+	int res=read_input(0,buf,63);
 	if(res>0&&buf[0]!='\n'){
-    //getcwd(promptBuff,MAX_INPUT);
-    //printf("\n%s",prompt);
 		buf[res-1]='\0';
 	}
 	return res;	
@@ -245,22 +266,21 @@ void getEnv(char** environ,char* PATH){
     strcpy(environcp,environ[i]);
     if(strstr(environcp,"PATH")!=NULL){
       char* cmdToken = strtok(environcp,"=");
-      //printf( "%s\n",cmdToken );
       if(strlen(cmdToken)==4){
         cmdToken = strtok(NULL, "=");
         strcpy(PATH,cmdToken);
         strcat(PATH,"\0");
-       //return cmdToken;
      }
    }
  }
- //return NULL;
 }
 
 int cmdParser(char* cmd, char* tokens[]){
-  //int BG = 0;
   int BG=containBGSign(cmd);
   int ct = 0;
+  if(!strcmp(cmd," ")){
+    return 10;
+  }
   for (char* cmdToken = strtok(cmd, " "); cmdToken; cmdToken = strtok(NULL, " ")){
     if (ct >= 10){
         break;
@@ -270,37 +290,20 @@ int cmdParser(char* cmd, char* tokens[]){
   for(;ct<10;ct++){
     tokens[ct] = NULL;
   }
-/*  if((!strcmp(tokens[0],"set"))&&(!strcmp(tokens[1],"PATH"))){
-    return 1;
-  }*/
-  if(!strcmp(tokens[0],"cd")){//change directory
+  if(BG==1){
+    bgflag=1;
+  }
+  if(!strcmp(tokens[0],"cd")){
 	 return 2;
-	/*if the first token is ./ return 3 */
-	}
-  else if(strstr(tokens[0],".sh")){
+	}else if(strstr(tokens[0],".sh")){
 		return 3;
-  }
-/*  else if((!strcmp(tokens[0],"set"))&&(!strcmp(tokens[1],"PS1"))){
-		return 4;
-  }*/
-
-  /*else if(containPipe(cmd)){
-    return 5;
-
-	}*/
-  else if(containSlash(tokens[0])==1){
+  }else if(containSlash(tokens[0])==1){
     return 7;
-  }
-  else if(!strcmp(tokens[0],"clear")){
+  }else if(!strcmp(tokens[0],"clear")){
     return 8;
-  }
-  else if(!strcmp(tokens[0],"pwd")){
+  }else if(!strcmp(tokens[0],"pwd")){
     return 9;
-  }
-/*  else if(!strcmp(tokens[0],"echo")){
-    return 10;
-  }*/
-  else if(!strcmp(tokens[0],"sleep")){
+  }else if(!strcmp(tokens[0],"sleep")){
     return 11;
   }
   else if(!strcmp(tokens[0],"cat")){
@@ -319,15 +322,15 @@ int cmdParser(char* cmd, char* tokens[]){
     //printf("ehotest\n");
     return 16;
   }
-    else if(!strcmp(tokens[0],"test")){
-    //getppid();
+  else if(!strcmp(tokens[0],"test")){
+    getppid();
     //printf("a");
-      int p=fork();
+     int p=fork();
         if(p){
             waitpid(2,0);
         }
         else{
-            execvpe("bin/test1",0,0);
+            execvpe("bin/testbin",0,0);
         }
 
     return 10;
@@ -341,7 +344,7 @@ int cmdParser(char* cmd, char* tokens[]){
 	   tokens[1]=token;
      printf("ccccc %s\n", tokens[1]);
    }
-    if(BG==1){
+  if(BG==1){
       printf("BG\n");
       return -10;
     }
@@ -388,7 +391,6 @@ void getAbsPath(char* cwdPath, char* fileName, char* absPath){
   strcat(absPath,cwdPath);
   strcat(absPath,"/");
   strcat(absPath,fileName);
-  //fprintf(stderr, "%s\n", absPath);
 }
 
 int isAbsPath(char* path){
@@ -398,8 +400,6 @@ int isAbsPath(char* path){
 }
 
 void exeScript(char* fileName,char* cwd,int argc, char* argv[], char* envp[]){
- // fprintf(stderr, "enter exeScript");
-  //fprintf(stderr, "file name %s\n",fileName);
   char *args[5];
   char temp[3];  
   int status=0;
@@ -407,73 +407,65 @@ void exeScript(char* fileName,char* cwd,int argc, char* argv[], char* envp[]){
   int ct = 0;
   int fd = open(fileName,O_RDONLY);
   char* buffer = malloc(MAX_INPUT);
-  //fprintf(stderr, "fd %d\n", fd );
   int read_size = read(fd,buffer,1);
-  //fprintf(stderr, "read size %d\n", read_size);
-  //while(1);
   char* cmdBuff = malloc(MAX_INPUT);
   while(read_size>0){
     if(buffer[read_size-1] != '\n'){
       cmdBuff[ct++] = buffer[read_size-1]; 
     }else{
       cmdBuff[ct] = '\0';
-      //fprintf(stderr, "%s\n", cmdBuff);
       if(strstr(cmdBuff,"#!")==NULL){
-        //char* cmdClone = malloc(MAX_INPUT);
-        //strcpy(cmdClone,cmdBuff);
-        //char* dummy[10];
-        //int cmdID  = cmdParser(cmdClone,dummy);
-        //printf("cmd buff:%s",cmdBuff);
-        
-        //int BG = containBGSign(cmdBuff);
+        int BG = containBGSign(cmdBuff);
+        if(BG==1){
+          bgflag=1;
+        }
         char* tokens[10];
         tokenize(tokens,cmdBuff);
-        //printf("%s\n",cmdBuff );
-        int cmdID = tokenParse(tokens[0],cmdBuff/*BG*/);
-        //printf(" tokens0 %d",tokens[0]);
-        //printf( "cmd idskadjksandkjasndkjn %d\n", cmdID);
-        if(!strcmp(tokens[0],"ls") && tokens[1]==NULL){
-          //char* token = malloc(MAX_INPUT);
-          //tokens[1] = getcwd(token,MAX_INPUT);
-	        //tokens[1]=token;
-          //listfiles(tokens[1],0);
-          //while(1);
+        int cmdID = tokenParse(tokens[0],cmdBuff);
+        if(!strcmp(tokens[0],"ls")){
+        getcwd(cwd,100);
+        cd(cwd);
+        if(tokens[1]){
+          args[0]=cwd;
+          args[1]=tokens[1];
+          args[2]="0";
+          args[3]=NULL;
+        }
+        else{
+          args[0]=cwd;
+          args[1]="0";
+          args[2]="0";
+          args[3]=NULL;  
+        }
           int p=fork();
           if(p){
-            waitpid(2,&status);
+              if(bgflag==1){
+                bgflag=0;
+                background(p);
+              }
+              else{
+                waitpid(p,&status);
+              }
           }
           else{
-            execvpe("bin/ls",argv,envp);
+            execvpe("bin/ls",args,envp);
           }
-        }
-
-/*        if(cmdID == 10 || cmdID == -10){
-          tokens[0] = findBin(PATH,boundleDir,tokens[0]);
-          if(cmdID==10){
-            exebin(tokens,RUNNONBG,envp);
-          }else{
-            exebin(tokens,RUNASBG,envp);
-          }
-        }*/else{
+        }else{
             //printf("\ncmd:%d\n", cmdID);
           if(cmdID==2){
-            //printf("cd1 path %s",tokens[1]);
-/*            chdir(tokens[1]);
-            getcwd(cwd,MAX_INPUT);
-            printf("%s\n",cwd, );*/
-            //renewPromort(promptBuff,prompt,brac);
+            if(isAbsPath(tokens[1])==1){
             cd(tokens[1]);
+            }else{
+              char* absPath = malloc(MAX_INPUT);
+              getAbsPath(cwd,tokens[1],absPath);
+              cd(absPath);
+              free(absPath);
+            }
+            getcwd(cwd,MAX_INPUT);
+            printf("%s\n", cwd);
           }else if(cmdID==3){
             char* fileName = tokens[0];
-            char* absPath = malloc(MAX_INPUT);
-            if(isAbsPath(fileName)==0){
-             //fprintf(stderr, "not a  absPath");
-              getAbsPath(cwd,tokens[0],absPath);
-              //printf( "the abs path %s\n", cwd);
-              fileName = absPath;
-            }
             exeScript(fileName,cwd,argc,argv,envp);
-            free(absPath);
           }
           else if(cmdID==8){
             clear_screen();
@@ -483,16 +475,28 @@ void exeScript(char* fileName,char* cwd,int argc, char* argv[], char* envp[]){
             printf("\n%s", cwd);
           }
           else if (cmdID==11){
+            if(tokens[1]){
             int p=fork();
             args[0]=tokens[1];
             args[1]="0";
             args[2]=NULL;
             if(p){
-              waitpid(2,&status);
+              //waitpid(2,&status);
+              if(bgflag==1){
+                bgflag=0;
+                background(p);
+              }
+              else{
+                waitpid(p,&status);
+              }
             }
             else{
               execvpe("bin/sleep",args,envp);
             }
+          }
+          else{
+            printf("time needed");
+          }
           }
           else if(cmdID==12){ 
             if(tokens[1]==NULL){
@@ -504,7 +508,13 @@ void exeScript(char* fileName,char* cwd,int argc, char* argv[], char* envp[]){
               args[1]="0";            
               args[2]=NULL;
               if(p){
-                waitpid(2,&status);
+                if(bgflag==1){
+                  bgflag=0;
+                  background(p);
+                }
+                else{
+                  waitpid(p,&status);
+                }
               }
               else{
                 execvpe("bin/cat",args,envp);
@@ -516,30 +526,47 @@ void exeScript(char* fileName,char* cwd,int argc, char* argv[], char* envp[]){
 
           }*/
           else if(cmdID==14){
+            if(tokens[1]){
             args[0]=tokens[1];
             args[1]="0";
             args[2]="0";
             args[3]=NULL;            
             int p=fork();
             if(p){
-              waitpid(2,&status);
+              if(bgflag==1){
+                bgflag=0;
+                background(p);
+              }
+              else{
+                waitpid(p,&status);
+              }
             }
             else{
               execvpe("bin/kill",args,envp);
             }
           }
+          else{
+            printf("pid needed");
+          }
+          }
           else if(cmdID==15){
             
             int p=fork();
             if(p){
-              waitpid(2,&status);
+              if(bgflag==1){
+                bgflag=0;
+                background(p);
+              }
+              else{
+                waitpid(p,&status);
+              }
             }
             else{
               execvpe("bin/ps",argv,envp);
             }
           }
           else if(cmdID==16){         
-            printf(" tokens111%s\n", tokens[1]);    
+            //printf(" tokens111%s\n", tokens[1]);    
             if(tokens[1]==NULL){//nothing to echo
               continue;
             }
@@ -557,7 +584,13 @@ void exeScript(char* fileName,char* cwd,int argc, char* argv[], char* envp[]){
             args[i+1]=NULL;     
             int p=fork();
             if(p){
-               waitpid(2,&status);
+              if(bgflag==1){
+                bgflag=0;
+                background(p);
+              }
+              else{
+                waitpid(p,&status);
+              }
             }
             else{
                 execvpe("bin/echo",args,envp);
@@ -566,12 +599,6 @@ void exeScript(char* fileName,char* cwd,int argc, char* argv[], char* envp[]){
           else{
             printf("no command");
           }
-          /*else if(cmdID==4){
-            if(tokens[2]!=NULL){
-              setPS1(PS1,tokens[2]);
-              renewPromort(promptBuff,prompt,brac);
-            }
-          }*/
         }
         //free(cmdClone);
       }
@@ -650,16 +677,28 @@ int tokenParse(char* token, int BG){
 }
 
 
+
 void cd(char* dir){
   if(dir==NULL){
     chdir("rootfs");
-    //closedir("rootfs");
     return;
   }
   int res=chdir(dir);
   if(res==-1){
     printf("dir not found\n");
   }
-  //closedir(dir);
+}
+
+
+int isDot(char* name){
+  if(name == NULL){
+    return -1;
+  }else if(name[0]=='.'){
+    if(name[1]=='.'){
+      return 1;
+    }else{
+      return 2;
+    }
+  }
 }
 

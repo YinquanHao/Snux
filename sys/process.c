@@ -19,7 +19,7 @@ uint64_t last_thread;
 uint64_t kernel_rsp;
 //list of pid
 int pid[PROCESS_NUM];
-
+int bgflag=0;
 /*init the pid array*/
 void init_pid(){
 	int i;
@@ -191,13 +191,6 @@ void init_thread_fn(){
 	//create a new thread which execute a binary of our bash
 	task_struct* thread1 = create_user_process("bin/init");
 
-	//char* argv[3] = { "a1", "a2", NULL };
-
-    //char* envp[4] = { "PATH=bin:rootfs/bin", "HOME=rootfs/bin", "USER=ROOT", NULL};
-
-    //sys_execve("bin/test",argv,envp);
-
-
 	//switch to ring3 and start execute the binary
 	switch_to_ring3(thread1);
 	//TODO @YinquanHao Need some keep scheduling mechnism here
@@ -270,16 +263,6 @@ task_struct* create_user_process(char* filename){
     task->cr3 = new_PML4;
     //set the cr3 to new PML4
     set_CR3((uint64_t)new_PML4);
-    //set the virtual_addr in  task as the HEAP_LIMIT
-    //PML4_SEL
-
-    //uint64_t a = get_tb_virt_addr(PML4_LEVEL,HEAP_LIMIT);
-
-    //kprintf("%x",a);
-
-    //uint64_t b = get_physical_addr(a);
-
-    //kprintf("%x",b);
 
     task->vir_top = VMA_VA_ST;
     //allocate the user_space and map it into vir_top
@@ -363,11 +346,17 @@ void sys_exit(int status) {
         // if found task_struct of parent process
         parent->waitpid = 0;
         //check if parent's task is blocked
-        if (parent->state == SLEEPING) {
+        if(bgflag==1){
+        	bgflag=0;
+        	context_switch(current,parent);
+        	return;
+        }
+        if (parent->state == SLEEPING || parent->state == WAIT) {
         	//set parent's task as ready
             parent->state = READY;
              //do the context switch
             context_switch(current,parent);
+            return;
         }
         //remove current task from the task linked list
     } else {
@@ -395,6 +384,8 @@ uint64_t fork(){
 	child->ppid=parent->pid;
 	//TODO yinquanhao need to fix copy child table
 	child->vir_top = parent->vir_top;
+
+	memcpy(&(child->fd[0]),&(current->fd[0]),(sizeof(current->fd[0])* 100));
 	//copy the parent's page table to child's page table
 	copy_child_table(child);
 	//copy the vma
@@ -419,7 +410,7 @@ uint64_t fork(){
 	//set pkstack as the lowest address of parent process's kstack
 	uint64_t pkstack=(uint64_t)(parent->kstack)-0x1000+16;  //0xffffffff8035f070
 	
-	kprintf("%x,%x",pkstack,child->kstack);
+	//kprintf("%x,%x",pkstack,child->kstack);
 	//memcpy the child process same as parent's
 	memcpy((void*)stack,(void*)(pkstack),0x1000-16);
 
@@ -608,7 +599,6 @@ void copy_child_mm(task_struct *child){
 
 				uint64_t size = (uint64_t)parent_vma->start - (uint64_t)parent_vma->end;
 
-				kprintf("enter stack vma copy 2 %d \n",size);
 
 				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->start-(uint64_t)parent_vma->end));
 
@@ -661,8 +651,6 @@ void copy_child_mm(task_struct *child){
 			}else if(parent_vma->type==STACK){
 				uint64_t size = (uint64_t)parent_vma->start-(uint64_t)parent_vma->end;
 
-				kprintf("enter stack vma copy 2 %d \n",size);
-
 
 
 				memcpy(child_vma,parent_vma,(uint64_t)((uint64_t)parent_vma->start-(uint64_t)parent_vma->end));
@@ -688,7 +676,6 @@ void copy_child_mm(task_struct *child){
 			uint64_t pml4_addr  = get_tb_virt_addr(PML4_LEVEL,0);
     		//kprintf("parent process vma %x",(uint64_t)parent_vma);
     		user_process_mapping((uint64_t)parent_vma,phyaddr,pml4_addr,0);
-
     		set_CR3(child->cr3);
 
 			prev=child_vma;
@@ -781,21 +768,32 @@ void __attribute__((optimize("O0"))) sys_sleep(uint64_t stime){
 	current->state=SLEEPING;
 	//kprintf("%d\n",stime);
 	current->sleep_time=stime*1000;
+	//schedule();	
 	if(current->next->pid==0||current->next==NULL){
 		while(current->sleep_time>0){
-			//kprintf("%x",current->sleep_time);
-			//return;
 		}
 		kprintf("return");
 		return;
+	}else{
+		schedule();
 	}
-
 	return;
-	//context_switch();
-	//kprintf("sl");
-	//kprintf(" %x %x ",current->pid,current->next->pid);
-	//schedule();
-	//return;
+}
+
+void __attribute__((optimize("O0"))) background(int pid){
+	//kprintf("   %d\n",current->pid );
+	bgflag=1;
+	current->state=SLEEPING;
+	current->sleep_time=3000;
+	while(current->sleep_time>0){
+		//kprintf("%d",current->sleep_time);
+	}
+	//kprintf("out\n");
+	current->state=READY;
+	task_struct* t1=get_task_by_pid(pid);
+	task_struct* t2=get_task_by_pid(current->pid);
+	context_switch(t2,t1);	
+	return;
 }
 
 
@@ -850,9 +848,7 @@ void task_list(){
 	}	
 }
 
-uint64_t sys_getppid(){
-	uint64_t tt2=allocate_page();
-	kprintf("alloc:%x",tt2);
+uint64_t sys_getppid(){	
 	return current->ppid;
 }
 
@@ -914,12 +910,12 @@ void kill_task(uint64_t pid){
 	}
 
 	// free vma, unmap and free the memory
-	int tt=allocate_page();
+	//int tt=allocate_page();
 	//set_CR3(temp->cr3);
 	mm_struct *temp_mm=temp->mm;
 	vma_struct *vma_temp=temp_mm->mmap;
 	uint64_t vaddr_start,vaddr_end;
-	uint64_t vaddr;
+	//uint64_t vaddr;
 	while(vma_temp){
 		vaddr_start=vma_temp->start;
 		vaddr_end=vma_temp->end;
@@ -935,7 +931,7 @@ void kill_task(uint64_t pid){
 	set_CR3(current->cr3);
 	//int tt2=allocate_page();
 	//kprintf("   %x   %x    \n",tt,tt2);
-	return 0;
+	return ;
 }
 
 void freeVaddr(uint64_t vaddr){
@@ -953,4 +949,23 @@ void freeVaddr(uint64_t vaddr){
 	page_tmp->next=free_pg_head->next;	
 	free_pg_head->next=page_tmp;
 	//kprintf(" free%x ",index);
+}
+
+int sys_wait(uint64_t* status){
+	int c_pid;
+	current->state=WAIT;
+	current->waitpid=-1;//wait for all children
+	schedule();
+	task_struct* temp=current;
+	while(temp){
+		if(temp->state==ZOMBIE&&temp->ppid==current->pid){
+			c_pid=temp->pid;			
+			break;
+		}
+		temp=temp->next;
+		if(temp==current){
+			return -1;
+		}
+	}
+	return c_pid;
 }

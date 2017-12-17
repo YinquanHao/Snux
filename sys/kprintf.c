@@ -90,7 +90,7 @@ void printWrapper(char* display_buf, const char* format, va_list args){
 
 
 void kprintf(const char *fmt, ...){
-	char buf[256]={0};
+	char* buf = get_vir_from_phy(kmalloc(KERNAL_MEM,1));
 	va_list args;
 	va_start(args, fmt);
 	printWrapper(buf,fmt,args);
@@ -122,14 +122,6 @@ void kprintf(const char *fmt, ...){
 			c++;
 			x++;
 		}
-/*		if(x==80&&y==19){
-			x=0;
-			y=0;
-		}
-		if(y==18){
-			x++;
-			y=0;
-		}*/
 		if(x==80){
 			if(y<20){
 				x=0;
@@ -243,7 +235,7 @@ void print_p(unsigned int input, char* display_buf,int* ptr){
 }
 
 void kprintt(const char *fmt,...){
-	char buf[1024]={-1};
+	char buf[256]={-1};
 	va_list args;
 	va_start(args, fmt);
 	printWrapper(buf,fmt,args);
@@ -263,17 +255,9 @@ void kprintt(const char *fmt,...){
 }
 
 void kprintkb(char state,char key){
-	//char buf[1024]={-1};
-	//va_list args;
-	//va_start(args, fmt);
-	//printWrapper(buf,fmt,args);
-	//va_end(args);
-
 	unsigned short * textptr = (unsigned short *)(VGA_ADDR)+25*80;
 	*(textptr-1)=key|0xF1<<8;
 	*(textptr-2)=state|0xF1<<8;
-
-
 }
 
 void scroll(){

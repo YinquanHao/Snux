@@ -47,7 +47,7 @@ int execvpe( const char *filename, char *const argv[], char *const envp[]){
 pid_t fork(void){
 	//if res==-1
 	uint64_t res =  syscall_0(SYS_fork);
-	printf("res %d\n", res);
+	//printf("res %d\n", res);
 	return res;
 }
 
@@ -102,3 +102,23 @@ int kill(pid_t pid, int sig){
 pid_t getppid(){
 	return  (pid_t)syscall_0(SYS_getppid);
 }
+
+void background(int pid){
+	return  (pid_t)syscall_0(SYS_bg);
+}
+
+pid_t getpid( ){
+	return  (pid_t)syscall_0(SYS_getpid);
+}
+
+int unlink(const char *pathname){
+	int res;
+	res=(int)syscall_1(SYS_unlink,(char*)pathname);
+	return res;
+}
+
+pid_t wait(int *status){
+	int res;
+	res=(int)syscall_1(SYS_wait,status);
+	return res;
+};
